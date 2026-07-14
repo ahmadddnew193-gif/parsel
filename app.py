@@ -7,7 +7,7 @@ st.title("🐍 Tokenade Engine")
 
 # Parameters
 carrier = st.text_input("Carrier Emoji", "🐍")
-intensity = st.slider("Payload Density", 100, 5000000000, 1000)
+intensity = st.slider("Payload Density", 100, 50000, 1000)
 
 # The logic that mimics the "glitch" functionality
 def generate_dense_payload(carrier_emoji, size):
