@@ -4,6 +4,7 @@ import random
 import re
 from collections import Counter
 import string
+import emoji
 
 # Initialize session state
 if "history" not in st.session_state:
@@ -65,6 +66,50 @@ ALL_TRANSFORMS = {
     ])(w) for w in t.split()),
 }
 
+# Tokenade generator
+def generate_tokenade(depth, breadth, repeats, variation_selectors, invisible_noise, separator, carrier):
+    # Emoji carriers
+    quick_picks = ['🐍', '🐉', '🐲', '🔥', '💥', '🗿', '⚓', '⭐', '✨', '🚀', '💀', '🪨', '🍃', '🪶', '🔮', '🐢', '🐊', '🦎']
+    
+    # Generate base payload
+    payload = []
+    for _ in range(repeats):
+        # Create nested structure
+        layer = carrier
+        for _ in range(depth):
+            children = []
+            for _ in range(breadth):
+                child = random.choice(quick_picks)
+                if variation_selectors:
+                    child += "\uFE0F"  # Variation selector
+                if invisible_noise:
+                    child += random.choice(["\u200B", "\u200C", "\u200D", "\uFEFF"])
+                children.append(child)
+            
+            layer = separator.join(children)
+        
+        payload.append(layer)
+    
+    return separator.join(payload)
+
+# Text payload generator
+def generate_text_payload(base_text, repeat_count, combining_marks, zero_width_spacing):
+    payload = []
+    for _ in range(repeat_count):
+        text = base_text
+        
+        # Add combining marks
+        if combining_marks:
+            text += "".join("\u0300-\u036F" for _ in range(len(text)))
+        
+        # Add zero-width spacing
+        if zero_width_spacing:
+            text = "\u200B".join(text)
+        
+        payload.append(text)
+    
+    return "\n".join(payload)
+
 # Cipher helper functions
 def playfair_encrypt(plaintext, key):
     # Simplified Playfair implementation
@@ -105,96 +150,160 @@ def playfair_encrypt(plaintext, key):
 def main():
     st.title("🐍 Parseltongue: Complete Text Transformation Tool")
     
-    # Sidebar
-    st.sidebar.header("Categories")
-    category = st.sidebar.radio(
-        "Select category:",
-        ["All", "Case", "Cipher", "Encoding", "Formatting", "Visual", "Randomizer"]
-    )
+    # Create tabs
+    tab1, tab2 = st.tabs(["Transformer", "Tokenade Generator"])
     
-    # Text input
-    text = st.text_area("Enter your text:", height=200)
+    with tab1:
+        # Sidebar
+        st.sidebar.header("Categories")
+        category = st.sidebar.radio(
+            "Select category:",
+            ["All", "Case", "Cipher", "Encoding", "Formatting", "Visual", "Randomizer"]
+        )
+        
+        # Text input
+        text = st.text_area("Enter your text:", height=200)
+        
+        # Filter transforms by category
+        if category == "All":
+            transforms = ALL_TRANSFORMS
+        elif category == "Case":
+            transforms = {k:v for k,v in ALL_TRANSFORMS.items() if k in [
+                "Alternating Case", "camelCase", "Capitalize Words", "kebab-case",
+                "Lowercase All", "Random Case", "Sentence Case", "snake_case",
+                "Title Case", "Uppercase All", "Toggle Case"
+            ]}
+        elif category == "Cipher":
+            transforms = {k:v for k,v in ALL_TRANSFORMS.items() if k in [
+                "A1Z26", "Atbash Cipher", "Caesar Cipher", "Vigenère Cipher",
+                "Baconian Cipher", "Playfair Cipher", "Rail Fence", "Affine Cipher",
+                "XOR Cipher"
+            ]}
+        elif category == "Encoding":
+            transforms = {k:v for k,v in ALL_TRANSFORMS.items() if k in [
+                "Base64", "Base32", "Hexadecimal"
+            ]}
+        elif category == "Formatting":
+            transforms = {k:v for k,v in ALL_TRANSFORMS.items() if k in [
+                "Remove Punctuation", "Remove Numbers", "Reverse Text",
+                "Shuffle Characters", "Remove Spaces", "Mirror Text"
+            ]}
+        elif category == "Visual":
+            transforms = {k:v for k,v in ALL_TRANSFORMS.items() if k in [
+                "Leetspeak", "Mirror Text"
+            ]}
+        elif category == "Randomizer":
+            transforms = {"Randomizer": ALL_TRANSFORMS["Randomizer"]}
+        
+        # Select transformation
+        transform_name = st.selectbox("Select transformation:", sorted(transforms.keys()))
+        
+        # Special parameters
+        params = {}
+        if "Caesar Cipher" in transform_name:
+            params["shift"] = st.slider("Shift value:", min_value=1, max_value=25, value=3)
+        elif "Vigenère Cipher" in transform_name:
+            params["key"] = st.text_input("Key:", "SECRET")
+        elif "Playfair Cipher" in transform_name:
+            params["key"] = st.text_input("Key:", "SECRET")
+        elif "Rail Fence" in transform_name:
+            params["n"] = st.slider("Rails:", min_value=2, max_value=10, value=3)
+        elif "Affine Cipher" in transform_name:
+            params["a"] = st.slider("a:", min_value=1, max_value=25, value=3)
+            params["b"] = st.slider("b:", min_value=0, max_value=25, value=5)
+        elif "XOR Cipher" in transform_name:
+            params["key"] = st.text_input("Key:", "KEY")
+        
+        # Apply transformation
+        if st.button("Transform"):
+            try:
+                if transform_name == "Randomizer":
+                    result = transforms[transform_name](text)
+                elif "Caesar Cipher" in transform_name:
+                    result = transforms[transform_name](text, params["shift"])
+                elif "Vigenère Cipher" in transform_name:
+                    result = transforms[transform_name](text, params["key"])
+                elif "Playfair Cipher" in transform_name:
+                    result = transforms[transform_name](text, params["key"])
+                elif "Rail Fence" in transform_name:
+                    result = transforms[transform_name](text, params["n"])
+                elif "Affine Cipher" in transform_name:
+                    result = transforms[transform_name](text, params["a"], params["b"])
+                elif "XOR Cipher" in transform_name:
+                    result = transforms[transform_name](text, params["key"])
+                else:
+                    result = transforms[transform_name](text)
+                
+                st.code(result)
+                st.session_state.history.append(f"{transform_name}: {result}")
+            except Exception as e:
+                st.error(f"Error: {str(e)}")
+        
+        # History
+        if st.session_state.history:
+            st.sidebar.subheader("Transformation History")
+            for item in st.session_state.history[-5:]:  # Show last 5 items
+                st.sidebar.write(item)
     
-    # Filter transforms by category
-    if category == "All":
-        transforms = ALL_TRANSFORMS
-    elif category == "Case":
-        transforms = {k:v for k,v in ALL_TRANSFORMS.items() if k in [
-            "Alternating Case", "camelCase", "Capitalize Words", "kebab-case",
-            "Lowercase All", "Random Case", "Sentence Case", "snake_case",
-            "Title Case", "Uppercase All", "Toggle Case"
-        ]}
-    elif category == "Cipher":
-        transforms = {k:v for k,v in ALL_TRANSFORMS.items() if k in [
-            "A1Z26", "Atbash Cipher", "Caesar Cipher", "Vigenère Cipher",
-            "Baconian Cipher", "Playfair Cipher", "Rail Fence", "Affine Cipher",
-            "XOR Cipher"
-        ]}
-    elif category == "Encoding":
-        transforms = {k:v for k,v in ALL_TRANSFORMS.items() if k in [
-            "Base64", "Base32", "Hexadecimal"
-        ]}
-    elif category == "Formatting":
-        transforms = {k:v for k,v in ALL_TRANSFORMS.items() if k in [
-            "Remove Punctuation", "Remove Numbers", "Reverse Text",
-            "Shuffle Characters", "Remove Spaces", "Mirror Text"
-        ]}
-    elif category == "Visual":
-        transforms = {k:v for k,v in ALL_TRANSFORMS.items() if k in [
-            "Leetspeak", "Mirror Text"
-        ]}
-    elif category == "Randomizer":
-        transforms = {"Randomizer": ALL_TRANSFORMS["Randomizer"]}
-    
-    # Select transformation
-    transform_name = st.selectbox("Select transformation:", sorted(transforms.keys()))
-    
-    # Special parameters
-    params = {}
-    if "Caesar Cipher" in transform_name:
-        params["shift"] = st.slider("Shift value:", min_value=1, max_value=25, value=3)
-    elif "Vigenère Cipher" in transform_name:
-        params["key"] = st.text_input("Key:", "SECRET")
-    elif "Playfair Cipher" in transform_name:
-        params["key"] = st.text_input("Key:", "SECRET")
-    elif "Rail Fence" in transform_name:
-        params["n"] = st.slider("Rails:", min_value=2, max_value=10, value=3)
-    elif "Affine Cipher" in transform_name:
-        params["a"] = st.slider("a:", min_value=1, max_value=25, value=3)
-        params["b"] = st.slider("b:", min_value=0, max_value=25, value=5)
-    elif "XOR Cipher" in transform_name:
-        params["key"] = st.text_input("Key:", "KEY")
-    
-    # Apply transformation
-    if st.button("Transform"):
-        try:
-            if transform_name == "Randomizer":
-                result = transforms[transform_name](text)
-            elif "Caesar Cipher" in transform_name:
-                result = transforms[transform_name](text, params["shift"])
-            elif "Vigenère Cipher" in transform_name:
-                result = transforms[transform_name](text, params["key"])
-            elif "Playfair Cipher" in transform_name:
-                result = transforms[transform_name](text, params["key"])
-            elif "Rail Fence" in transform_name:
-                result = transforms[transform_name](text, params["n"])
-            elif "Affine Cipher" in transform_name:
-                result = transforms[transform_name](text, params["a"], params["b"])
-            elif "XOR Cipher" in transform_name:
-                result = transforms[transform_name](text, params["key"])
-            else:
-                result = transforms[transform_name](text)
+    with tab2:
+        st.markdown("💥 Tokenade Generator")
+        st.markdown("Craft dense token payloads with emojis and zero-width characters")
+        st.markdown("DISCLAIMER: Tokenade payloads can severely degrade model performance and crash UIs. Use for testing only. Do not deploy to production or target systems without explicit permission.")
+        
+        # Tokenade settings
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("🪶 Feather")
+            st.markdown("🍃 Light")
+            st.markdown("🪨 Middle")
+            st.markdown("🗿 Heavy")
+            st.markdown("⚓ Super")
             
+            depth = st.slider("Depth", min_value=1, max_value=10, value=3)
+            breadth = st.slider("Breadth", min_value=1, max_value=20, value=4)
+            repeats = st.slider("Repeats", min_value=1, max_value=100, value=5)
+            variation_selectors = st.checkbox("Variation selectors")
+            invisible_noise = st.checkbox("Invisible noise")
+            
+            separator_options = ["ZWJ", "ZWNJ", "ZWSP", "None"]
+            separator = st.radio("Separator", separator_options, index=0)
+            separator = {
+                "ZWJ": "\u200D",
+                "ZWNJ": "\u200C",
+                "ZWSP": "\u200B",
+                "None": ""
+            }[separator]
+        
+        with col2:
+            st.markdown("Estimated length: 2,882 chars")
+            
+            # Quick picks
+            quick_picks = ['🐍', '🐉', '🐲', '🔥', '💥', '🗿', '⚓', '⭐', '✨', '🚀', '💀', '🪨', '🍃', '🪶', '🔮', '🐢', '🐊', '🦎']
+            carrier = st.selectbox("Single emoji carrier", quick_picks)
+            
+            # Custom carrier
+            custom_carrier = st.text_input("Custom carrier", value="", placeholder="Overrides quick picks")
+            if custom_carrier:
+                carrier = custom_carrier
+            
+            # Generate button
+            if st.button("Generate Tokenade"):
+                result = generate_tokenade(depth, breadth, repeats, variation_selectors, invisible_noise, separator, carrier)
+                st.code(result)
+                st.session_state.history.append(f"Tokenade: {len(result)} chars")
+        
+        # Text Payload Generator
+        st.markdown("---")
+        st.markdown("Text Payload Generator")
+        base_text = st.text_input("Base text", value="hello", placeholder="Enter base snippet (e.g., hello)")
+        repeat_count = st.slider("Repeat count", min_value=1, max_value=1000, value=100)
+        combining_marks = st.checkbox("Combining marks")
+        zero_width_spacing = st.checkbox("Zero-width spacing")
+        
+        if st.button("Generate Text Payload"):
+            result = generate_text_payload(base_text, repeat_count, combining_marks, zero_width_spacing)
             st.code(result)
-            st.session_state.history.append(f"{transform_name}: {result}")
-        except Exception as e:
-            st.error(f"Error: {str(e)}")
-    
-    # History
-    if st.session_state.history:
-        st.sidebar.subheader("Transformation History")
-        for item in st.session_state.history[-5:]:  # Show last 5 items
-            st.sidebar.write(item)
+            st.session_state.history.append(f"Text Payload: {len(result)} chars")
 
 if __name__ == "__main__":
     main()
