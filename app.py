@@ -4,13 +4,66 @@ import random
 import re
 from collections import Counter
 import string
-import emoji
 
 # Initialize session state
 if "history" not in st.session_state:
     st.session_state.history = []
 
 st.set_page_config(page_title="Parseltongue", page_icon="🐍")
+
+# Define all transformations
+ALL_TRANSFORMS = {
+    # Case transformations
+    "Alternating Case": lambda t: ''.join(c.upper() if i % 2 == 0 else c.lower() for i, c in enumerate(t)),
+    "camelCase": lambda t: ''.join([t.split()[0].lower()] + [w.capitalize() for w in t.split()[1:]]),
+    "Capitalize Words": lambda t: ' '.join(w.capitalize() for w in t.split()),
+    "kebab-case": lambda t: '-'.join(w.lower() for w in t.split()),
+    "Lowercase All": lambda t: t.lower(),
+    "Random Case": lambda t: ''.join(c.upper() if random.choice([True, False]) else c.lower() for c in t),
+    "Sentence Case": lambda t: '. '.join(s.capitalize() for s in t.split('. ')),
+    "snake_case": lambda t: '_'.join(w.lower() for w in t.split()),
+    "Title Case": lambda t: t.title(),
+    "Uppercase All": lambda t: t.upper(),
+    "Toggle Case": lambda t: ''.join(c.upper() if c.islower() else c.lower() for c in t),
+    
+    # Ciphers
+    "A1Z26": lambda t: '-'.join(str(ord(c)-ord('A')+1) if c.isalpha() else c for c in t.upper()),
+    "Atbash Cipher": lambda t: ''.join(chr(ord('Z')-(ord(c)-ord('A'))) if c.isalpha() else c for c in t.upper()),
+    "Caesar Cipher": lambda t, shift=3: ''.join(chr((ord(c)-ord('A')+shift)%26+ord('A')) if c.isalpha() else c for c in t.upper()),
+    "Vigenère Cipher": lambda t, key="SECRET": ''.join(chr((ord(c)-ord('A')+ord(k)-ord('A'))%26+ord('A')) if c.isalpha() else c for c,k in zip(t.upper(), (key*len(t))[:len(t)])),
+    "Baconian Cipher": lambda t: ' '.join(bin(ord(c)-ord('A')).replace('0b','') if c.isalpha() else c for c in t.upper()),
+    "Playfair Cipher": lambda t, key="SECRET": playfair_encrypt(t, key),
+    "Rail Fence": lambda t, n=3: ''.join(''.join(t[i::n]) for i in range(n)),
+    "Affine Cipher": lambda t, a=3, b=5: ''.join(chr((a*(ord(c)-ord('A'))+b)%26+ord('A')) if c.isalpha() else c for c in t.upper()),
+    "XOR Cipher": lambda t, key="KEY": ''.join(chr(ord(c)^ord(k)) for c,k in zip(t, (key*len(t))[:len(t)])),
+    
+    # Encoding
+    "Base64": lambda t: base64.b64encode(t.encode()).decode(),
+    "Base32": lambda t: base64.b32encode(t.encode()).decode(),
+    "Hexadecimal": lambda t: t.encode().hex(),
+    
+    # Formatting
+    "Remove Punctuation": lambda t: re.sub(r'[^\w\s]', '', t),
+    "Remove Numbers": lambda t: re.sub(r'\d', '', t),
+    "Reverse Text": lambda t: t[::-1],
+    "Shuffle Characters": lambda t: ''.join(random.sample(t, len(t))),
+    "Remove Spaces": lambda t: t.replace(' ', ''),
+    "Mirror Text": lambda t: t[::-1],
+    
+    # Visual effects
+    "Leetspeak": lambda t: ''.join({'a':'4','e':'3','i':'1','o':'0','s':'5'}.get(c.lower(), c) for c in t),
+    "Mirror Text": lambda t: t[::-1],
+    
+    # Randomizer
+    "Randomizer": lambda t: ' '.join(random.choice([
+        lambda w: w.upper(),
+        lambda w: w.lower(),
+        lambda w: w[::-1],
+        lambda w: ''.join(random.sample(w, len(w))),
+        lambda w: ''.join({'a':'4','e':'3','i':'1','o':'0','s':'5'}.get(c.lower(), c) for c in w),
+        lambda w: w[::-1]
+    ])(w) for w in t.split()),
+}
 
 # Tokenade generator - based on original implementation
 def generate_tokenade(depth, breadth, repeats, variation_selectors, invisible_noise, separator, carrier):
