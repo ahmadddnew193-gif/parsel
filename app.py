@@ -7,36 +7,41 @@ st.title("🐍 Tokenade Engine")
 
 # Parameters
 carrier = st.text_input("Carrier Emoji", "🐍")
-intensity = st.slider("Payload Density", 100, 50000, 1000)
+payload_text = st.text_input("Custom Payload", "Insert text here...")
+intensity = st.slider("Noise/Obfuscation Density", 100, 10000, 1000)
 
-# The logic that mimics the "glitch" functionality
-def generate_dense_payload(carrier_emoji, size):
-    # These are the unicode ranges used for "invisible" noise and variation
-    # Variation Selectors: U+FE00-U+FE0F
-    # Invisible Formatting: U+200B-U+200D
-    # Tag Blocks (used in dense payloads): U+E0000-U+E007F
+def generate_dense_payload(carrier_emoji, payload, size):
+    # Unicode ranges for invisible noise/glitch effects
     noise_ranges = [
-        range(0xFE00, 0xFE0F), 
-        range(0x200B, 0x200D),
-        range(0xE0000, 0xE007F)
+        range(0xFE00, 0xFE0F),  # Variation Selectors
+        range(0x200B, 0x200D),  # ZWSP, ZWNJ, ZWJ
+        range(0xE0000, 0xE007F) # Tag Blocks
     ]
     
-    payload = carrier_emoji
+    # We interleave the custom payload with the carrier and noise
+    # The original logic fragments the payload with noise characters
+    result = carrier_emoji
     
-    for _ in range(size):
-        # Pick a random range, then a random character from that range
-        chosen_range = random.choice(noise_ranges)
-        char = chr(random.choice(chosen_range))
-        payload += char
-        
-    return payload
+    # Split the custom payload into parts and inject noise between them
+    payload_parts = list(payload)
+    for part in payload_parts:
+        result += part
+        # Inject random noise after each character of your payload
+        for _ in range(size // len(payload) if len(payload) > 0 else size):
+            chosen_range = random.choice(noise_ranges)
+            result += chr(random.choice(chosen_range))
+            
+    return result
 
 if st.button("Generate Payload"):
-    output = generate_dense_payload(carrier, intensity)
-    
-    # Display the output in a code block so it doesn't break the UI
-    st.code(output, language='text')
-    
-    # Display meta-info
-    st.write(f"Payload Character Count: {len(output)}")
-    st.success("Payload generated. You can now copy this for testing.")
+    if not payload_text:
+        st.warning("Please enter a payload.")
+    else:
+        output = generate_dense_payload(carrier, payload_text, intensity)
+        
+        # Display output
+        st.code(output, language='text')
+        
+        # Meta-info
+        st.write(f"Total Character Count: {len(output)}")
+        st.success("Payload successfully obfuscated.")
