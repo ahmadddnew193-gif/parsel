@@ -4,6 +4,7 @@ import random
 import re
 from collections import Counter
 import string
+import pyperclip
 
 # Initialize session state
 if "history" not in st.session_state:
@@ -285,11 +286,21 @@ def main():
             if custom_carrier:
                 carrier = custom_carrier
             
+            # Auto-copy checkbox
+            auto_copy = st.checkbox("Auto-copy to clipboard")
+            
             # Generate button
             if st.button("Generate Tokenade"):
                 result = generate_tokenade(depth, breadth, repeats, variation_selectors, invisible_noise, separator, carrier)
                 st.code(result)
                 st.session_state.history.append(f"Tokenade: {len(result)} chars")
+                
+                if auto_copy:
+                    try:
+                        pyperclip.copy(result)
+                        st.success("Copied to clipboard!")
+                    except Exception as e:
+                        st.error(f"Failed to copy: {str(e)}")
         
         # Text Payload Generator
         st.markdown("---")
