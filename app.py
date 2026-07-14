@@ -1,45 +1,31 @@
 import streamlit as st
 import random
 
-# --- Logic Engine ---
-def generate_tokenade(text, carrier="✨", spacing="ZWJ"):
-    # Map separators to Unicode characters
-    separators = {"ZWJ": "\u200D", "ZWNJ": "\u200C", "ZWSP": "\u200B", "None": ""}
-    sep = separators.get(spacing, "")
+def get_noise():
+    # Full set of non-rendering control characters
+    return ["\u2062", "\u2063", "\u200D", "\u200B", "\u200E", "\u2060", "\u202A", "\u202B", "\uFEFF"]
+
+def generate_pro_tokenade(text, carrier, density=5):
+    noise_pool = get_noise()
+    encoded = carrier
     
-    # Transform to Unicode Tags (U+E0000 block)
-    payload = "".join([chr(0xE0000 + ord(c)) for c in text])
-    return f"{carrier}{sep}{payload.replace('', sep)}"
+    # Generate the main payload with high-density noise injection
+    for char in text:
+        # Inject multiple noise characters to increase entropy
+        padding = "".join(random.choices(noise_pool, k=density))
+        encoded += padding + chr(0xE0000 + ord(char)) + padding
+        
+    # Add random "Entropy Blocks" at the end to simulate the 700+ char length
+    for _ in range(50):
+        encoded += random.choice(noise_pool)
+        
+    return encoded
 
-# --- UI Interface ---
-st.set_page_config(page_title="Tokenade Generator", layout="wide")
-st.title("💥 Tokenade Generator")
-st.write("Craft dense token payloads with emojis and zero-width characters")
+# --- UI Integration ---
+st.subheader("Advanced Payload Generator")
+density = st.slider("Density Multiplier (Length)", 1, 15, 5)
 
-# --- Presets (The "Feather" to "SuperDepth" logic) ---
-presets = {"🪶 Feather": 1, "🍃 Light": 2, "🨨 Middle": 4, "🗿 Heavy": 8, "⚓ SuperDepth": 16}
-selected_preset = st.select_slider("Presets", options=list(presets.keys()))
-
-col1, col2 = st.columns(2)
-with col1:
-    nesting = st.number_input("Nesting levels", 1, 10, presets[selected_preset])
-    breadth = st.slider("Breadth", 1, 10, 3)
-with col2:
-    repeats = st.slider("Repeats", 1, 5, 1)
-    separator = st.selectbox("Separator", ["ZWJ", "ZWNJ", "ZWSP", "None"])
-
-st.divider()
-
-# --- Carrier Selection ---
-carrier_opt = st.text_input("Custom carrier", placeholder="Overrides quick picks")
-quick_picks = "🐍🐉🐲🔥💥🗿⚓⭐✨🚀💀🨨🍃🪶🔮🐢🐊🦎"
-selected_emoji = st.selectbox("Quick picks", list(quick_picks))
-final_carrier = carrier_opt if carrier_opt else selected_emoji
-
-# --- Payload Generation ---
-payload_input = st.text_input("Base text", "TOKENADE")
-
-if st.button("Generate Tokenade"):
-    result = generate_tokenade(payload_input, final_carrier, separator)
+if st.button("Generate Dense Tokenade"):
+    result = generate_pro_tokenade(payload_input, final_carrier, density)
     st.code(result, language=None)
-    st.success(f"Estimated length: {len(result)} chars")
+    st.write(f"Final Payload Size: {len(result)} characters")
