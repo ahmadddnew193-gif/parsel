@@ -1,36 +1,28 @@
 import streamlit as st
 import time
 
-# --- P4RS3LT0NGV3 Logic Mockup ---
-def get_tokenade_sequence(text, carrier="⚓"):
+def to_unicode_tags(text):
     """
-    Creates the sequence of tokens modulated by the carrier.
+    Converts normal text into Invisible Unicode Tag characters.
+    The Tag range starts at U+E0000.
     """
+    res = "✨" # Their carrier
     for char in text:
-        # Carrier mode: [Carrier] [Token] [Carrier]
-        # This keeps the layout anchored.
-        yield f"{carrier} {char} {carrier}\n"
-        time.sleep(0.08) # Speed matching the canonical implementation
+        # Each character becomes a hidden tag character
+        res += chr(0xE0000 + ord(char))
+    return res
 
-# --- UI Layer ---
-st.set_page_config(page_title="Tokenade Engine", layout="centered")
-st.title("🐍 Tokenade / P4RS3LT0NGV3")
+st.title("P4RS3LT0NGV3 Clone")
 
-payload_input = st.text_input("Payload Sequence", "TOKENADE_STREAM_DATA")
-mode = st.toggle("Carrier Mode (Active)", value=True)
+payload = st.text_input("Payload:", "TOKENADE")
+mode = st.radio("Mode:", ["Carrier Mode (Invisible)", "Visible"])
 
-if st.button("Initialize Stream"):
-    # Clear previous output
-    output_container = st.empty()
-    
-    # We use a custom generator to yield the modulated stream
-    def stream_gen():
-        for char in payload_input:
-            if mode:
-                yield f"⚓ {char} ⚓"
-            else:
-                yield char
-            time.sleep(0.05)
-
-    # Use Streamlit's native streaming to prevent UI jitter
-    st.write_stream(stream_gen)
+if st.button("Generate"):
+    if mode == "Carrier Mode (Invisible)":
+        # This will produce the exact string structure as their repo
+        output = to_unicode_tags(payload)
+        st.code(output, language=None)
+        st.write("Copy the code block above—it is now in the exact format they use.")
+    else:
+        # Your visible version
+        st.write(f"⚓ {' ⚓ '.join(list(payload))} ⚓")
