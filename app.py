@@ -1,39 +1,42 @@
 import streamlit as st
+import random
 
-# Unicode mapping for invisible characters
-UNICODE_MAP = {
-    "ZWJ": "\u200D",   # Zero Width Joiner
-    "ZWNJ": "\u200C",  # Zero Width Non-Joiner
-    "ZWSP": "\u200B",  # Zero Width Space
-    "None": ""
-}
+# UI Configuration
+st.set_page_config(page_title="Tokenade Engine", layout="centered")
+st.title("🐍 Tokenade Engine")
 
-def generate_payload(depth, breadth, repeats, separator_key, use_noise):
-    sep = UNICODE_MAP.get(separator_key, "")
+# Parameters
+carrier = st.text_input("Carrier Emoji", "🐍")
+intensity = st.slider("Payload Density", 100, 5000, 1000)
+
+# The logic that mimics the "glitch" functionality
+def generate_dense_payload(carrier_emoji, size):
+    # These are the unicode ranges used for "invisible" noise and variation
+    # Variation Selectors: U+FE00-U+FE0F
+    # Invisible Formatting: U+200B-U+200D
+    # Tag Blocks (used in dense payloads): U+E0000-U+E007F
+    noise_ranges = [
+        range(0xFE00, 0xFE0F), 
+        range(0x200B, 0x200D),
+        range(0xE0000, 0xE007F)
+    ]
     
-    # Building the payload
-    # Original logic: {depth} nesting * breadth * repeats
-    base_unit = "{" * depth + "TOKEN" * breadth + "}" * depth
+    payload = carrier_emoji
     
-    noise = "\u200B" if use_noise else ""
+    for _ in range(size):
+        # Pick a random range, then a random character from that range
+        chosen_range = random.choice(noise_ranges)
+        char = chr(random.choice(chosen_range))
+        payload += char
+        
+    return payload
+
+if st.button("Generate Payload"):
+    output = generate_dense_payload(carrier, intensity)
     
-    # Construct the final string
-    full_payload = (base_unit + noise + sep).join([""] * repeats)
-    return full_payload
-
-# Streamlit UI
-st.title("Tokenade Python Implementation")
-
-# Sliders to match the original UI
-depth = st.slider("Depth", 1, 10, 3)
-breadth = st.slider("Breadth", 1, 10, 4)
-repeats = st.slider("Repeats", 1, 100, 6)
-
-# Selectors
-use_noise = st.checkbox("Invisible noise")
-separator = st.radio("Separator", ["ZWJ", "ZWNJ", "ZWSP", "None"], horizontal=True)
-
-if st.button("Generate Tokenade"):
-    payload = generate_payload(depth, breadth, repeats, separator, use_noise)
-    st.text_area("Generated Payload", payload, height=200)
-    st.info(f"Length: {len(payload)} characters")
+    # Display the output in a code block so it doesn't break the UI
+    st.code(output, language='text')
+    
+    # Display meta-info
+    st.write(f"Payload Character Count: {len(output)}")
+    st.success("Payload generated. You can now copy this for testing.")
