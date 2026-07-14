@@ -40,7 +40,7 @@ with st.sidebar:
     st.divider()
     
     st.subheader("Fine-tuning")
-    density = st.slider("Density Multiplier", 1, 15, intensity[preset])
+    density = st.slider("Density Multiplier", 1, 1000, intensity[preset])
     separator = st.selectbox("Separator", ["ZWJ", "ZWNJ", "ZWSP", "None"])
     
     st.divider()
