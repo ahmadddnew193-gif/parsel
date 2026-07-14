@@ -1,28 +1,39 @@
 import streamlit as st
 
-def generate_tokenade(depth, breadth, repeats, noise_level):
-    # Logic to build the payload structure based on user inputs
-    payload = "{" * depth
-    for _ in range(repeats):
-        payload += "TOKEN" * breadth + ("\u200b" * noise_level)
-    payload += "}" * depth
-    return payload
+# Unicode mapping for invisible characters
+UNICODE_MAP = {
+    "ZWJ": "\u200D",   # Zero Width Joiner
+    "ZWNJ": "\u200C",  # Zero Width Non-Joiner
+    "ZWSP": "\u200B",  # Zero Width Space
+    "None": ""
+}
 
-st.title("💣 Tokenade Payload Builder")
+def generate_payload(depth, breadth, repeats, separator_key, use_noise):
+    sep = UNICODE_MAP.get(separator_key, "")
+    
+    # Building the payload
+    # Original logic: {depth} nesting * breadth * repeats
+    base_unit = "{" * depth + "TOKEN" * breadth + "}" * depth
+    
+    noise = "\u200B" if use_noise else ""
+    
+    # Construct the final string
+    full_payload = (base_unit + noise + sep).join([""] * repeats)
+    return full_payload
 
-with st.sidebar:
-    st.header("Parameters")
-    depth = st.slider("Depth", 1, 10, 3)
-    breadth = st.slider("Breadth", 1, 10, 5)
-    repeats = st.slider("Repeats", 1, 100, 10)
-    noise = st.checkbox("Include Unicode/ZWSP Noise")
-    
-if st.button("Generate Payload"):
-    output = generate_tokenade(depth, breadth, repeats, 1 if noise else 0)
-    
-    # Safety Check
-    token_est = len(output) # Simplified metric
-    if token_est > 10000:
-        st.warning(f"Danger: High token threshold reached ({token_est} chars)")
-    
-    st.text_area("Payload Output", output, height=200)
+# Streamlit UI
+st.title("Tokenade Python Implementation")
+
+# Sliders to match the original UI
+depth = st.slider("Depth", 1, 10, 3)
+breadth = st.slider("Breadth", 1, 10, 4)
+repeats = st.slider("Repeats", 1, 100, 6)
+
+# Selectors
+use_noise = st.checkbox("Invisible noise")
+separator = st.radio("Separator", ["ZWJ", "ZWNJ", "ZWSP", "None"], horizontal=True)
+
+if st.button("Generate Tokenade"):
+    payload = generate_payload(depth, breadth, repeats, separator, use_noise)
+    st.text_area("Generated Payload", payload, height=200)
+    st.info(f"Length: {len(payload)} characters")
