@@ -10,279 +10,256 @@ if "history" not in st.session_state:
 
 st.set_page_config(page_title="Parseltongue", page_icon="🐍")
 
-# Define transformation functions
-def alternating_case(text):
-    return ''.join(char.upper() if i % 2 == 0 else char.lower() 
-                  for i, char in enumerate(text))
-
-def camel_case(text):
-    words = text.split()
-    return ''.join([words[0].lower()] + [word.capitalize() for word in words[1:]])
-
-def capitalize_words(text):
-    return ' '.join(word.capitalize() for word in text.split())
-
-def kebab_case(text):
-    return '-'.join(word.lower() for word in text.split())
-
-def lowercase_all(text):
-    return text.lower()
-
-def random_case(text):
-    return ''.join(char.upper() if random.choice([True, False]) else char.lower() 
-                  for char in text)
-
-def sentence_case(text):
-    return '. '.join(sentence.capitalize() for sentence in text.split('. '))
-
-def snake_case(text):
-    return '_'.join(word.lower() for word in text.split())
-
-def title_case(text):
-    return text.title()
-
-def uppercase_all(text):
-    return text.upper()
-
-def toggle_case(text):
-    return ''.join(char.upper() if char.islower() else char.lower() 
-                  for char in text)
-
 # Cipher implementations
-def caesar_cipher(text, shift=3):
-    result = ""
-    for char in text:
-        if char.isalpha():
-            base = ord('A') if char.isupper() else ord('a')
-            result += chr((ord(char) - base + shift) % 26 + base)
-        else:
-            result += char
-    return result
-
-def vigenere_cipher(text, key="SECRET"):
-    result = ""
-    key_index = 0
-    for char in text:
-        if char.isalpha():
-            shift = ord(key[key_index % len(key)].upper()) - ord('A')
-            base = ord('A') if char.isupper() else ord('a')
-            result += chr((ord(char) - base + shift) % 26 + base)
-            key_index += 1
-        else:
-            result += char
-    return result
+def a1z26_cipher(text):
+    return '-'.join(str(ord(c)-ord('A')+1) if c.isalpha() else c for c in text.upper())
 
 def atbash_cipher(text):
-    result = ""
-    for char in text:
-        if char.isalpha():
-            base = ord('A') if char.isupper() else ord('a')
-            result += chr(ord('Z') - (ord(char) - base))
+    return ''.join(chr(ord('Z')-(ord(c)-ord('A'))) if c.isalpha() else c for c in text.upper())
+
+def caesar_cipher(text, shift=3):
+    return ''.join(chr((ord(c)-ord('A')+shift)%26+ord('A')) if c.isalpha() else c for c in text.upper())
+
+def vigenere_cipher(text, key="SECRET"):
+    return ''.join(chr((ord(c)-ord('A')+ord(k)-ord('A'))%26+ord('A')) if c.isalpha() else c 
+                  for c,k in zip(text.upper(), (key*len(text))[:len(text)]))
+
+def baconian_cipher(text):
+    binary_map = {'A':'00000', 'B':'00001', 'C':'00010', 'D':'00011', 'E':'00100',
+                  'F':'00101', 'G':'00110', 'H':'00111', 'I':'01000', 'J':'01001',
+                  'K':'01010', 'L':'01011', 'M':'01100', 'N':'01101', 'O':'01110',
+                  'P':'01111', 'Q':'10000', 'R':'10001', 'S':'10010', 'T':'10011',
+                  'U':'10100', 'V':'10101', 'W':'10110', 'X':'10111', 'Y':'11000',
+                  'Z':'11001'}
+    return ' '.join(binary_map[c] if c.isalpha() else c for c in text.upper())
+
+def playfair_cipher(text, key="SECRET"):
+    # Simplified Playfair implementation
+    alphabet = 'ABCDEFGHIKLMNOPQRSTUVWXYZ'
+    key_table = ''.join(dict.fromkeys(key.upper() + alphabet))
+    
+    pairs = []
+    i = 0
+    while i < len(text):
+        if i+1 < len(text) and text[i].upper() != text[i+1].upper():
+            pairs.append((text[i], text[i+1]))
+            i += 2
         else:
-            result += char
-    return result
-
-# Base encoders
-def encode_base64(text):
-    return base64.b64encode(text.encode()).decode()
-
-def encode_base32(text):
-    return base64.b32encode(text.encode()).decode()
-
-def encode_hex(text):
-    return text.encode().hex()
-
-# Steganography
-def invisible_text(text):
-    return '\u200B'.join(text)
-
-def zero_width_encode(text):
-    return '\u200B'.join(text)
-
-# Format transformations
-def remove_punctuation(text):
-    return re.sub(r'[^\w\s]', '', text)
-
-def remove_numbers(text):
-    return re.sub(r'\d', '', text)
-
-def reverse_text(text):
-    return text[::-1]
-
-def shuffle_characters(text):
-    chars = list(text)
-    random.shuffle(chars)
-    return ''.join(chars)
-
-def remove_spaces(text):
-    return text.replace(' ', '')
-
-def mirror_text(text):
-    return text[::-1]
-
-def leetspeak(text):
-    replacements = {'a': '4', 'e': '3', 'i': '1', 'o': '0', 's': '5'}
-    return ''.join(replacements.get(c.lower(), c) for c in text)
-
-# Randomizer
-def randomize_text(text):
-    transforms = [
-        ("upper", lambda x: x.upper()),
-        ("lower", lambda x: x.lower()),
-        ("reverse", lambda x: x[::-1]),
-        ("shuffle", lambda x: ''.join(random.sample(x, len(x)))),
-        ("leetspeak", leetspeak),
-        ("mirror", mirror_text)
-    ]
+            pairs.append((text[i], 'X'))
+            i += 1
     
     result = []
-    for word in text.split():
-        transform = random.choice(transforms)
-        result.append(transform[1](word))
-        
-    return ' '.join(result)
+    for p1, p2 in pairs:
+        if p1.isalpha() and p2.isalpha():
+            idx1 = key_table.index(p1.upper())
+            idx2 = key_table.index(p2.upper())
+            row1, col1 = idx1 // 5, idx1 % 5
+            row2, col2 = idx2 // 5, idx2 % 5
+            
+            if row1 == row2:
+                result.append(key_table[row1*5 + (col1+1)%5])
+                result.append(key_table[row2*5 + (col2+1)%5])
+            elif col1 == col2:
+                result.append(key_table[((row1+1)%5)*5 + col1])
+                result.append(key_table[((row2+1)%5)*5 + col2])
+            else:
+                result.append(key_table[row1*5 + col2])
+                result.append(key_table[row2*5 + col1])
+        else:
+            result.append(p1+p2)
+    
+    return ''.join(result)
+
+def rail_fence_cipher(text, n_rails=3):
+    fence = [[] for _ in range(n_rails)]
+    rail = 0
+    direction = 1
+    
+    for char in text:
+        fence[rail].append(char)
+        if rail == 0:
+            direction = 1
+        elif rail == n_rails - 1:
+            direction = -1
+        rail += direction
+    
+    result = []
+    for row in fence:
+        result.extend(row)
+    return ''.join(result)
+
+def affine_cipher(text, a=3, b=5):
+    m = 26
+    a_inv = pow(a, -1, m)
+    return ''.join(chr((a_inv*(ord(c)-ord('A')-b))%m+ord('A')) if c.isalpha() else c 
+                  for c in text.upper())
+
+def xor_cipher(text, key="KEY"):
+    key = (key * len(text))[:len(text)]
+    return ''.join(chr(ord(c) ^ ord(k)) for c,k in zip(text, key))
 
 # Main app
 def main():
     st.title("🐍 Parseltongue: Complete Text Transformation Tool")
     
-    # Sidebar with categories
+    # Sidebar
     st.sidebar.header("Categories")
     category = st.sidebar.radio(
         "Select category:",
-        ["Case Transformations", "Ciphers", "Encoding", "Formatting", "Visual", "Randomizer"]
+        ["All", "Case", "Cipher", "Encoding", "Formatting", "Visual", "Randomizer"]
     )
     
     # Text input
     text = st.text_area("Enter your text:", height=200)
     
-    # Category-specific options
-    if category == "Case Transformations":
-        transform_type = st.selectbox(
-            "Select transformation:",
-            ["Alternating Case", "camelCase", "Capitalize Words", "kebab-case", 
-             "Lowercase All", "Random Case", "Sentence Case", "snake_case", 
-             "Title Case", "Uppercase All", "Toggle Case"]
-        )
-        
-        if st.button("Transform"):
-            if transform_type == "Alternating Case":
-                result = alternating_case(text)
-            elif transform_type == "camelCase":
-                result = camel_case(text)
-            elif transform_type == "Capitalize Words":
-                result = capitalize_words(text)
-            elif transform_type == "kebab-case":
-                result = kebab_case(text)
-            elif transform_type == "Lowercase All":
-                result = lowercase_all(text)
-            elif transform_type == "Random Case":
-                result = random_case(text)
-            elif transform_type == "Sentence Case":
-                result = sentence_case(text)
-            elif transform_type == "snake_case":
-                result = snake_case(text)
-            elif transform_type == "Title Case":
-                result = title_case(text)
-            elif transform_type == "Uppercase All":
-                result = uppercase_all(text)
-            elif transform_type == "Toggle Case":
-                result = toggle_case(text)
-                
-            st.code(result)
-            st.session_state.history.append(f"Case: {result}")
-    
-    elif category == "Ciphers":
-        cipher_type = st.selectbox(
-            "Select cipher:",
-            ["Caesar Cipher", "Vigenère Cipher", "Atbash Cipher"]
-        )
-        
-        if cipher_type == "Caesar Cipher":
-            shift = st.slider("Shift value:", min_value=1, max_value=25, value=3)
-            if st.button("Encrypt"):
-                result = caesar_cipher(text, shift)
-                st.code(result)
-                st.session_state.history.append(f"Caesar({shift}): {result}")
-        
-        elif cipher_type == "Vigenère Cipher":
-            key = st.text_input("Key:", "SECRET")
-            if st.button("Encrypt"):
-                result = vigenere_cipher(text, key)
-                st.code(result)
-                st.session_state.history.append(f"Vigenère({key}): {result}")
-        
-        elif cipher_type == "Atbash Cipher":
-            if st.button("Encrypt"):
-                result = atbash_cipher(text)
-                st.code(result)
-                st.session_state.history.append(f"Atbash: {result}")
-    
+    # Filter transforms by category
+    if category == "All":
+        transforms = {
+            "Alternating Case": lambda t: ''.join(c.upper() if i % 2 == 0 else c.lower() for i, c in enumerate(t)),
+            "camelCase": lambda t: ''.join([t.split()[0].lower()] + [w.capitalize() for w in t.split()[1:]]),
+            "Capitalize Words": lambda t: ' '.join(w.capitalize() for w in t.split()),
+            "kebab-case": lambda t: '-'.join(w.lower() for w in t.split()),
+            "Lowercase All": lambda t: t.lower(),
+            "Random Case": lambda t: ''.join(c.upper() if random.choice([True, False]) else c.lower() for c in t),
+            "Sentence Case": lambda t: '. '.join(s.capitalize() for s in t.split('. ')),
+            "snake_case": lambda t: '_'.join(w.lower() for w in t.split()),
+            "Title Case": lambda t: t.title(),
+            "Uppercase All": lambda t: t.upper(),
+            "Toggle Case": lambda t: ''.join(c.upper() if c.islower() else c.lower() for c in t),
+            
+            # Ciphers
+            "A1Z26": a1z26_cipher,
+            "Atbash Cipher": atbash_cipher,
+            "Caesar Cipher": caesar_cipher,
+            "Vigenère Cipher": vigenere_cipher,
+            "Baconian Cipher": baconian_cipher,
+            "Playfair Cipher": playfair_cipher,
+            "Rail Fence": rail_fence_cipher,
+            "Affine Cipher": affine_cipher,
+            "XOR Cipher": xor_cipher,
+            
+            # Encoding
+            "Base64": lambda t: base64.b64encode(t.encode()).decode(),
+            "Base32": lambda t: base64.b32encode(t.encode()).decode(),
+            "Hexadecimal": lambda t: t.encode().hex(),
+            
+            # Formatting
+            "Remove Punctuation": lambda t: re.sub(r'[^\w\s]', '', t),
+            "Remove Numbers": lambda t: re.sub(r'\d', '', t),
+            "Reverse Text": lambda t: t[::-1],
+            "Shuffle Characters": lambda t: ''.join(random.sample(t, len(t))),
+            "Remove Spaces": lambda t: t.replace(' ', ''),
+            "Mirror Text": lambda t: t[::-1],
+            
+            # Visual effects
+            "Leetspeak": lambda t: ''.join({'a':'4','e':'3','i':'1','o':'0','s':'5'}.get(c.lower(), c) for c in t),
+            "Mirror Text": lambda t: t[::-1],
+            
+            # Randomizer
+            "Randomizer": lambda t: ' '.join(random.choice([
+                lambda w: w.upper(),
+                lambda w: w.lower(),
+                lambda w: w[::-1],
+                lambda w: ''.join(random.sample(w, len(w))),
+                lambda w: ''.join({'a':'4','e':'3','i':'1','o':'0','s':'5'}.get(c.lower(), c) for c in w),
+                lambda w: w[::-1]
+            ])(w) for w in t.split()),
+        }
+    elif category == "Case":
+        transforms = {
+            "Alternating Case": lambda t: ''.join(c.upper() if i % 2 == 0 else c.lower() for i, c in enumerate(t)),
+            "camelCase": lambda t: ''.join([t.split()[0].lower()] + [w.capitalize() for w in t.split()[1:]]),
+            "Capitalize Words": lambda t: ' '.join(w.capitalize() for w in t.split()),
+            "kebab-case": lambda t: '-'.join(w.lower() for w in t.split()),
+            "Lowercase All": lambda t: t.lower(),
+            "Random Case": lambda t: ''.join(c.upper() if random.choice([True, False]) else c.lower() for c in t),
+            "Sentence Case": lambda t: '. '.join(s.capitalize() for s in t.split('. ')),
+            "snake_case": lambda t: '_'.join(w.lower() for w in t.split()),
+            "Title Case": lambda t: t.title(),
+            "Uppercase All": lambda t: t.upper(),
+            "Toggle Case": lambda t: ''.join(c.upper() if c.islower() else c.lower() for c in t),
+        }
+    elif category == "Cipher":
+        transforms = {
+            "A1Z26": a1z26_cipher,
+            "Atbash Cipher": atbash_cipher,
+            "Caesar Cipher": caesar_cipher,
+            "Vigenère Cipher": vigenere_cipher,
+            "Baconian Cipher": baconian_cipher,
+            "Playfair Cipher": playfair_cipher,
+            "Rail Fence": rail_fence_cipher,
+            "Affine Cipher": affine_cipher,
+            "XOR Cipher": xor_cipher,
+        }
     elif category == "Encoding":
-        encoding_type = st.selectbox(
-            "Select encoding:",
-            ["Base64", "Base32", "Hexadecimal", "Invisible Text", "Zero-Width"]
-        )
-        
-        if st.button("Encode"):
-            if encoding_type == "Base64":
-                result = encode_base64(text)
-            elif encoding_type == "Base32":
-                result = encode_base32(text)
-            elif encoding_type == "Hexadecimal":
-                result = encode_hex(text)
-            elif encoding_type == "Invisible Text":
-                result = invisible_text(text)
-            elif encoding_type == "Zero-Width":
-                result = zero_width_encode(text)
-                
-            st.code(result)
-            st.session_state.history.append(f"{encoding_type}: {result}")
-    
+        transforms = {
+            "Base64": lambda t: base64.b64encode(t.encode()).decode(),
+            "Base32": lambda t: base64.b32encode(t.encode()).decode(),
+            "Hexadecimal": lambda t: t.encode().hex(),
+        }
     elif category == "Formatting":
-        format_type = st.selectbox(
-            "Select format:",
-            ["Remove Punctuation", "Remove Numbers", "Reverse Text", 
-             "Shuffle Characters", "Remove Spaces", "Mirror Text"]
-        )
-        
-        if st.button("Format"):
-            if format_type == "Remove Punctuation":
-                result = remove_punctuation(text)
-            elif format_type == "Remove Numbers":
-                result = remove_numbers(text)
-            elif format_type == "Reverse Text":
-                result = reverse_text(text)
-            elif format_type == "Shuffle Characters":
-                result = shuffle_characters(text)
-            elif format_type == "Remove Spaces":
-                result = remove_spaces(text)
-            elif format_type == "Mirror Text":
-                result = mirror_text(text)
-                
-            st.code(result)
-            st.session_state.history.append(f"Format: {result}")
-    
+        transforms = {
+            "Remove Punctuation": lambda t: re.sub(r'[^\w\s]', '', t),
+            "Remove Numbers": lambda t: re.sub(r'\d', '', t),
+            "Reverse Text": lambda t: t[::-1],
+            "Shuffle Characters": lambda t: ''.join(random.sample(t, len(t))),
+            "Remove Spaces": lambda t: t.replace(' ', ''),
+            "Mirror Text": lambda t: t[::-1],
+        }
     elif category == "Visual":
-        visual_type = st.selectbox(
-            "Select visual effect:",
-            ["Leetspeak", "Mirror Text"]
-        )
-        
-        if st.button("Apply Effect"):
-            if visual_type == "Leetspeak":
-                result = leetspeak(text)
-            elif visual_type == "Mirror Text":
-                result = mirror_text(text)
-                
-            st.code(result)
-            st.session_state.history.append(f"Visual: {result}")
-    
+        transforms = {
+            "Leetspeak": lambda t: ''.join({'a':'4','e':'3','i':'1','o':'0','s':'5'}.get(c.lower(), c) for c in t),
+            "Mirror Text": lambda t: t[::-1],
+        }
     elif category == "Randomizer":
-        if st.button("Randomize Text"):
-            result = randomize_text(text)
+        transforms = {"Randomizer": lambda t: ' '.join(random.choice([
+            lambda w: w.upper(),
+            lambda w: w.lower(),
+            lambda w: w[::-1],
+            lambda w: ''.join(random.sample(w, len(w))),
+            lambda w: ''.join({'a':'4','e':'3','i':'1','o':'0','s':'5'}.get(c.lower(), c) for c in w),
+            lambda w: w[::-1]
+        ])(w) for w in t.split())}
+    
+    # Select transformation
+    transform_name = st.selectbox("Select transformation:", sorted(transforms.keys()))
+    
+    # Special parameters
+    params = {}
+    if "Caesar Cipher" in transform_name:
+        params["shift"] = st.slider("Shift value:", min_value=1, max_value=25, value=3)
+    elif "Vigenère Cipher" in transform_name:
+        params["key"] = st.text_input("Key:", "SECRET")
+    elif "Rail Fence" in transform_name:
+        params["n_rails"] = st.slider("Rails:", min_value=2, max_value=10, value=3)
+    elif "Affine Cipher" in transform_name:
+        params["a"] = st.slider("a:", min_value=1, max_value=25, value=3)
+        params["b"] = st.slider("b:", min_value=0, max_value=25, value=5)
+    elif "XOR Cipher" in transform_name:
+        params["key"] = st.text_input("Key:", "KEY")
+    
+    # Apply transformation
+    if st.button("Transform"):
+        try:
+            if transform_name == "Randomizer":
+                result = transforms[transform_name](text)
+            elif "Caesar Cipher" in transform_name:
+                result = transforms[transform_name](text, params["shift"])
+            elif "Vigenère Cipher" in transform_name:
+                result = transforms[transform_name](text, params["key"])
+            elif "Rail Fence" in transform_name:
+                result = transforms[transform_name](text, params["n_rails"])
+            elif "Affine Cipher" in transform_name:
+                result = transforms[transform_name](text, params["a"], params["b"])
+            elif "XOR Cipher" in transform_name:
+                result = transforms[transform_name](text, params["key"])
+            else:
+                result = transforms[transform_name](text)
+            
             st.code(result)
-            st.session_state.history.append(f"Randomized: {result}")
+            st.session_state.history.append(f"{transform_name}: {result}")
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
     
     # History
     if st.session_state.history:
