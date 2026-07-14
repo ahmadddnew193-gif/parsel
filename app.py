@@ -1,28 +1,45 @@
 import streamlit as st
-import time
+import random
 
-def to_unicode_tags(text):
-    """
-    Converts normal text into Invisible Unicode Tag characters.
-    The Tag range starts at U+E0000.
-    """
-    res = "✨" # Their carrier
-    for char in text:
-        # Each character becomes a hidden tag character
-        res += chr(0xE0000 + ord(char))
-    return res
+# --- Logic Engine ---
+def generate_tokenade(text, carrier="✨", spacing="ZWJ"):
+    # Map separators to Unicode characters
+    separators = {"ZWJ": "\u200D", "ZWNJ": "\u200C", "ZWSP": "\u200B", "None": ""}
+    sep = separators.get(spacing, "")
+    
+    # Transform to Unicode Tags (U+E0000 block)
+    payload = "".join([chr(0xE0000 + ord(c)) for c in text])
+    return f"{carrier}{sep}{payload.replace('', sep)}"
 
-st.title("P4RS3LT0NGV3 Clone")
+# --- UI Interface ---
+st.set_page_config(page_title="Tokenade Generator", layout="wide")
+st.title("💥 Tokenade Generator")
+st.write("Craft dense token payloads with emojis and zero-width characters")
 
-payload = st.text_input("Payload:", "TOKENADE")
-mode = st.radio("Mode:", ["Carrier Mode (Invisible)", "Visible"])
+# --- Presets (The "Feather" to "SuperDepth" logic) ---
+presets = {"🪶 Feather": 1, "🍃 Light": 2, "🨨 Middle": 4, "🗿 Heavy": 8, "⚓ SuperDepth": 16}
+selected_preset = st.select_slider("Presets", options=list(presets.keys()))
 
-if st.button("Generate"):
-    if mode == "Carrier Mode (Invisible)":
-        # This will produce the exact string structure as their repo
-        output = to_unicode_tags(payload)
-        st.code(output, language=None)
-        st.write("Copy the code block above—it is now in the exact format they use.")
-    else:
-        # Your visible version
-        st.write(f"⚓ {' ⚓ '.join(list(payload))} ⚓")
+col1, col2 = st.columns(2)
+with col1:
+    nesting = st.number_input("Nesting levels", 1, 10, presets[selected_preset])
+    breadth = st.slider("Breadth", 1, 10, 3)
+with col2:
+    repeats = st.slider("Repeats", 1, 5, 1)
+    separator = st.selectbox("Separator", ["ZWJ", "ZWNJ", "ZWSP", "None"])
+
+st.divider()
+
+# --- Carrier Selection ---
+carrier_opt = st.text_input("Custom carrier", placeholder="Overrides quick picks")
+quick_picks = "🐍🐉🐲🔥💥🗿⚓⭐✨🚀💀🨨🍃🪶🔮🐢🐊🦎"
+selected_emoji = st.selectbox("Quick picks", list(quick_picks))
+final_carrier = carrier_opt if carrier_opt else selected_emoji
+
+# --- Payload Generation ---
+payload_input = st.text_input("Base text", "TOKENADE")
+
+if st.button("Generate Tokenade"):
+    result = generate_tokenade(payload_input, final_carrier, separator)
+    st.code(result, language=None)
+    st.success(f"Estimated length: {len(result)} chars")
