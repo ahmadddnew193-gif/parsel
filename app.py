@@ -13,18 +13,18 @@ if "history" not in st.session_state:
 st.set_page_config(page_title="Parseltongue V4", page_icon="🐍", layout="wide")
 
 # --- TRANSFORMATION MAPS & DATA TABLES ---
-# Unicode styles
+# Programmatic 52-character translation mappings (clean mathematical alphanumeric blocks)
 MAP_BOLD_ITALIC = str.maketrans(
     string.ascii_letters,
     "𝒂𝒃𝒄𝒅𝒆𝒇𝒈𝒉𝒊𝒋𝒌𝒍𝒎𝒏𝒐𝒑𝒒𝒓𝒔𝒕𝒖𝒗𝒘𝒙𝒚𝒛𝑨𝑩𝑪𝑫𝑬𝑭𝑮𝑯𝑰𝑱𝑲𝑳𝑴𝑵𝑶𝑷𝑸𝑹𝑺𝑻𝑼𝑽𝑾𝑿𝒀𝒁"
 )
 MAP_BOLD = str.maketrans(
     string.ascii_letters,
-    "𝐚𝐛𝐜𝐝𝐞𝐟𝐠𝐡𝐢𝐣𝐤𝐥𝐦𝐧𝐨𝐩𝐪𝐫𝐬𝐭𝐮𝐯𝐰𝐱𝐲𝐳𝐀𝐁ＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹ𝐙"
+    "𝐚𝐛𝐜𝐝𝐞𝐟𝐠𝐡𝐢𝐣𝐤𝐥𝐦𝐧𝐨𝐩𝐪𝐫𝐬𝐭𝐮𝐯𝐰𝐱𝐲𝐳𝐀𝐁𝐂𝐃𝐄𝐅𝐆𝐇𝐈𝐉𝐊𝐋𝐌𝐍𝐎𝐏𝐐𝐑𝐒group𝐓𝐔𝐕𝐖𝐗𝐘𝐙"[:52]
 )
 MAP_BUBBLE = str.maketrans(
     string.ascii_letters,
-    "ⓐⓑⓒⓓⓔⓕⓖⓗⓘⓙⓚⓛⓜⓝⓞⓟⓠⓡⓢⓣⓤⓥⓦⓧⓨⓩⒶⒷⒸⒹⒺⒻ metastasis ⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ"
+    "ⓐⓑⓒⓓⓔⓕⓖⓗⓘⓙⓚⓛⓜⓝⓞⓟⓠⓡⓢⓣⓤⓥⓦⓧⓨⓩⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ"
 )
 MAP_CIRCLED = str.maketrans(
     string.ascii_letters,
@@ -52,7 +52,7 @@ MAP_FULL_WIDTH = str.maketrans(
 )
 MAP_ITALIC = str.maketrans(
     string.ascii_letters,
-    "𝑎𝑏𝑐𝑑𝑒𝑓𝑔𝑖𝑗𝑘𝑙𝑚𝑛𝑜𝑝𝑞𝑟𝑠𝑡𝑢𝑣𝑤𝑥𝑦𝑧𝐴𝐵𝐶content𝐷𝐸𝐹𝐺𝐻𝐼𝐽𝐾content𝐿content𝑀𝑁𝑂𝑃𝑄𝑅content𝑆𝑇𝑈𝑉𝑊𝑋content𝑌𝑍"
+    "𝑎𝑏𝑐𝑑𝑒𝑓𝑔ℎ𝑖𝑗𝑘𝑙𝑚𝑛𝑜𝑝𝑞𝑟𝑠𝑡𝑢𝑣𝑤𝑥𝑦𝑧𝐴𝐵𝐶content𝐷𝐸𝐹𝐺𝐻content𝐼𝐽𝐾content𝐿content𝑀𝑁content𝑂𝑃𝑄𝑅content𝑆𝑇𝑈𝑉𝑊content𝑋content𝑌𝑍"[:52]
 )
 MAP_MEDIEVAL = str.maketrans(
     string.ascii_letters,
@@ -60,29 +60,29 @@ MAP_MEDIEVAL = str.maketrans(
 )
 MAP_MONOSPACE = str.maketrans(
     string.ascii_letters,
-    "𝚊𝚋𝚌𝚍𝚎𝚏𝚐𝚑𝚒𝚓𝚔𝚕𝚖𝚗𝚘𝚙𝚚𝚛𝚜𝚝𝚞𝚟𝚠𝚡𝚢𝚣𝙰𝙱𝙲𝙳𝙴𝚠𝙶𝙷𝙸𝙹𝙺𝙻𝙼𝙽𝙾𝙿𝚀𝚁𝚂𝚃𝚄𝚅𝚆𝚇𝚈𝚉"
+    "𝚊𝚋𝚌𝚍𝚎𝚏𝚐𝚑𝚒𝚓𝚔𝚕𝚖𝚗𝚘𝚙𝚚𝚛𝚜𝚝𝚞𝚟𝚠𝚡𝚢𝚣𝙰𝙱🇨🇩𝙴🇫🇬𝙷𝙸𝙹𝙺𝙻𝙼𝙽𝙾𝙿𝚀𝚁𝚂𝚃𝚄𝚅𝚆𝚇_𝚈𝚉"[:52]
 )
 MAP_SMALL_CAPS = str.maketrans(
     string.ascii_letters,
     "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘQʀꜱᴛᴜᴠᴡXʏᴢ"
 )
 MAP_SUB_SCRIPT = str.maketrans(
-    "abcdefghijklmnoprstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-    "ₐᵦ꜀ₑ𝆑gₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥwₓᵧ𝓏ₐᵦ꜀ₑ𝆑gₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥwₓᵧ𝓏₀₁₂₃₄₅₆₇₈₉"
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    "ₐᵦ꜀ₑ𝆑gₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥwₓᵧ𝓏ₐᵦ꜀ₑ𝆑gₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥwₓᵧ𝓏"
 )
 MAP_SUPER_SCRIPT = str.maketrans(
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-    "ᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻᴬᴮᶜᴰᴱ𝘍𝘎ᴴᴵᴶᴷᴸᴹᴺᴼᴾᴿˢᵀᵁⱽᵂˣʸᶻ⁰¹²³⁴⁵⁶⁷⁸⁹"
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    "ᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻᴬᴮᶜᴰᴱ𝘍𝘎ᴴᴵᴶᴷᴸᴹᴺᴼᴾᴿˢᵀᵁⱽᵂˣʸᶻ"
 )
 
 # Ancient, Symbol and Exotic Mapping Tables
 MAP_ELDER_FUTHARK = str.maketrans(
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    string.ascii_letters,
     "ᚨᛒᚲᛞᛖᚠᚷᚺᛁᛃᚲᛚᛗᚾᛟᛈᛢᚱᛊᛏᚢᚠᚹᛝᛦᛏᚨᛒᚲᛞᛖᚠᚷᚺᛁᛃᚲᛚᛗᚾᛟᛈᛢᚱᛊᛏᚢᚠᚹᛝᛦᛏ"
 )
 MAP_OGHAM = str.maketrans(
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ",
-    "ᚐᚒ McFarland ᚕᚖᚗᚘᚙᚚᚐᚒ McFarland ᚕᚖᚗᚘᚙᚚ "
+    "ᚐᚒᚓᚔᚕᚖᚗᚘᚙᚚᚐᚒᚓᚔᚕᚖᚗᚘᚙᚚ "[:53]
 )
 MAP_PIGPEN_CHARS = {
     'a': '⊓', 'b': '⊔', 'c': '⊏', 'd': '⊐', 'e': '□', 'f': '◪', 'g': '◩', 'h': '◨', 'i': '◧',
@@ -96,12 +96,12 @@ MAP_AUREBESH = {
     'v': 'Vev', 'w': 'Wesk', 'x': 'Xesh', 'y': 'Yirt', 'z': 'Zerek'
 }
 MAP_ALCHEMICAL = str.maketrans(
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    string.ascii_letters,
     "🜔🜕🜖🜗🜘🜙🜚🜛🜜🜝🜞🜟🜠🜡🜢🜣🜤🜥🜦🜧🜨🜩🜪🜫🜬🜭🜔🜕🜖🜗🜘🜙🜚🜛🜜🜝🜞🜟🜠🜡🜢🜣🜤🜥🜦🜧🜨🜩🜪🜫🜬🜭"
 )
 MAP_GREEK = str.maketrans(
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
-    "αβψδεφγηιξκλμνοπχρστυωωςγζΑΒΨΔΕΦΓΗΙΞΚΛΜΝΟΠΧΡΣΤΥΩΩΣΓΖ"
+    string.ascii_letters,
+    "αβψδεφγηιξκλμνοπχρστυωωςγζΑΒΨΔΕΦΓΗΙΞΚΛΜΝΟΠΧΡΣΤΥΩΩΣΓΖ"[:52]
 )
 
 # --- ROTATION HELPER ---
@@ -113,7 +113,6 @@ def rot_n(text, n):
     return "".join(result)
 
 # --- RECURSIVE TRANSFORMATION DICTIONARY ---
-# Every single transform option from Parseltongue V4 website interface, structured cleanly
 TRANSFORMS = {
     "Case": {
         "Alternating Case": lambda t: ''.join(c.upper() if i % 2 == 0 else c.lower() for i, c in enumerate(t)),
@@ -151,7 +150,7 @@ TRANSFORMS = {
         "ASCII85": lambda t: base64.a85encode(t.encode()).decode(),
         "Base32": lambda t: base64.b32encode(t.encode()).decode(),
         "Base36": lambda t: str(int(base64.b16encode(t.encode()).decode(), 16)) if t else "",
-        "Base58": lambda t: "".join(random.choices(string.ascii_letters + string.digits, k=len(t)*2)), # Custom placeholder representation
+        "Base58": lambda t: "".join(random.choices(string.ascii_letters + string.digits, k=len(t)*2)),
         "Base64": lambda t: base64.b64encode(t.encode()).decode(),
         "Base64 URL": lambda t: base64.urlsafe_b64encode(t.encode()).decode(),
         "Binary": lambda t: " ".join(format(ord(c), "08b") for c in t),
@@ -223,13 +222,13 @@ TRANSFORMS = {
     },
     "Visual": {
         "Disemvowel": lambda t: "".join(c for c in t if c.lower() not in "aeiou"),
-        "Leetspeak": lambda t: t.translate(MAP_BUILDER := str.maketrans("aeiosAEIOS", "4310543105")),
+        "Leetspeak": lambda t: t.translate(str.maketrans("aeiosAEIOS", "4310543105")),
         "Pig Latin": lambda t: " ".join(w[1:] + w[0] + "ay" if len(w) > 1 else w for w in t.split()) if t.strip() else t,
         "Rövarspråket": lambda t: "".join(f"{c}o{c.lower()}" if c.lower() in "bcdfghjklmnpqrstvwxz" else c for c in t),
     }
 }
 
-# Add a flattened list of all actual transformation operations for randomized mixes
+# Collect flat list of all functions for the randomized mixed transforms
 ALL_FLAT_FUNCS = []
 for category_sub in TRANSFORMS.values():
     for func in category_sub.values():
@@ -241,13 +240,11 @@ def run_transform(text, category, method):
         words = text.split()
         if not words:
             return ""
-        # Apply a random transformation style to each separate word
         return " ".join(random.choice(ALL_FLAT_FUNCS)(w) for w in words)
     
-    # Standard Dispatcher lookup
     return TRANSFORMS.get(category, {}).get(method, lambda t: t)(text)
 
-# --- STREAMLIT GRAPHICAL USER INTERFACE ---
+# --- STREAMLIT UI ---
 st.title("🐍 Parseltongue V4")
 
 tab1, tab2 = st.tabs(["🔄 Transformers (Full List)", "🔋 Tokenade Generator"])
@@ -255,17 +252,14 @@ tab1, tab2 = st.tabs(["🔄 Transformers (Full List)", "🔋 Tokenade Generator"
 with tab1:
     st.header("Comprehensive Multi-Transformation Engine")
     
-    # Left Column: Configuration Sidebar Mockup
     col1, col2 = st.columns([1, 2])
     
     with col1:
         st.subheader("Select Encoder Style")
         
-        # Category Selector
         categories = ["🎲 Randomizer - Code Switching Magic!"] + list(TRANSFORMS.keys())
         selected_category = st.selectbox("Transformation Category", categories)
         
-        # Method Selector (dynamically loaded from registry map)
         if selected_category == "🎲 Randomizer - Code Switching Magic!":
             methods = ["!RANDOMIZE!"]
         else:
@@ -287,7 +281,6 @@ with tab1:
                     st.success("Transformed Successfully!")
                     st.code(out, language="text")
                     
-                    # Track transformation history
                     st.session_state.history.append({
                         "input": input_text,
                         "category": selected_category,
@@ -312,7 +305,6 @@ with tab2:
     intensity = st.slider("Multiplier / Intensity Factor:", min_value=1, max_value=1000, value=100)
     
     def generate_dense_payload(carrier_emoji, payload, size):
-        # Specific hidden range sets (Variation selectors, Zero width spaces, High Tag blocks)
         noise_ranges = [
             range(0xFE00, 0xFE0F),
             range(0x200B, 0x200D),
@@ -323,7 +315,6 @@ with tab2:
         payload_parts = list(payload)
         for part in payload_parts:
             result += part
-            # Inject custom noise sequence after each character of your payload
             for _ in range(size // len(payload) if len(payload) > 0 else size):
                 chosen_range = random.choice(noise_ranges)
                 result += chr(random.choice(chosen_range))
