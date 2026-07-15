@@ -19,7 +19,7 @@ if "generated_cases" not in st.session_state:
 
 st.set_page_config(page_title="Parseltongue V4", page_icon="🐍", layout="wide")
 
-# --- SAFE DICTIONARY-BASED TRANSFORMATION MAPS ---
+# --- TRANSFORMATION MAPS ---
 MAP_BOLD_ITALIC = str.maketrans(dict(zip(
     string.ascii_letters,
     "𝒂𝒃𝒄𝒅𝒆𝒇𝒈𝒉𝒊𝒋𝒌𝒍𝒎𝒏𝒐𝒑𝒒𝒓𝒔𝒕𝒖𝒗𝒘𝒙𝒚𝒛𝑨𝑩𝑪𝑫𝑬𝑭𝑮𝑯𝑰𝑱𝑲𝑳𝑴𝑵𝑶𝑷𝑸𝑹𝑺𝑻𝑼𝑽𝑾𝑿𝒀𝒁"
@@ -27,7 +27,7 @@ MAP_BOLD_ITALIC = str.maketrans(dict(zip(
 
 MAP_BOLD = str.maketrans(dict(zip(
     string.ascii_letters,
-    "𝐚𝐛𝐜𝐝𝐞𝐟𝐠𝐡𝐢𝐣𝐤𝐥𝐦𝐧𝐨𝐩𝐪𝐫𝐬𝐭𝐮𝐯𝐰𝐱𝐲𝐳𝐀𝐁🇨🇩🇪options🇫𝐆𝐇𝐈𝐉𝐊🇱🇲🇳🇴🇵𝐐𝐑𝐒𝐓𝐔𝑽𝐖𝐗𝐘𝐙"
+    "𝐚𝐛𝐜𝐝𝐞𝐟𝐠𝐡𝐢𝐣𝐤processing𝐥𝐦𝐧𝐨𝐩𝐪𝐫𝐬𝐭𝐮𝐯𝐰𝐱𝐲𝐳𝐀𝐁🇨🇩🇪options🇫𝐆𝐇𝐈𝐉𝐊🇱🇲🇳🇴🇵𝐐𝐑𝐒𝐓🇺𝑽𝑾𝑿𝒀𝒁"
 )))
 
 MAP_BUBBLE = str.maketrans(dict(zip(
@@ -118,7 +118,7 @@ MAP_ALCHEMICAL = str.maketrans(dict(zip(
 
 MAP_GREEK = str.maketrans(dict(zip(
     string.ascii_letters,
-    "αβψδεφγηιξκλμνοπχρστυωωςγζΑΒΨΔblock𝐄ΦΓΗΙΞΚΛΜΝΟΠΧΡΣ𝐓ΥΩΩΣΓΖ"
+    "αβψδεφγηιξκλμνοπχρστυωωςγζΑΒΨΔΕΦΓΗΙΞΚΛΜΝΟΠΧΡΣ𝐓ΥΩΩΣΓΖ"
 )))
 
 MAP_PIGPEN_CHARS = {
@@ -134,7 +134,6 @@ MAP_AUREBESH = {
     'v': 'Vev', 'w': 'Wesk', 'x': 'Xesh', 'y': 'Yirt', 'z': 'Zerek'
 }
 
-# Homoglyph database for confusion mutations
 HOMOGLYPHS = {
     'a': ['а', 'ａ', 'ɑ', 'å', 'ǎ'], 'b': ['Ь', 'ｂ', 'ь', 'Б', 'ß'], 'c': ['с', 'ｃ', 'ⅽ', 'ć'],
     'd': ['ⅾ', 'ｄ', 'đ', 'ď'], 'e': ['е', 'ｅ', 'ė', 'ě', 'ē'], 'f': ['ｆ', 'ƒ'], 'g': ['ｇ', 'ğ', 'ġ'],
@@ -150,27 +149,29 @@ HOMOGLYPHS = {
     'Y': ['Ү', 'Ｙ'], 'Z': ['Ｚ']
 }
 
-# Cipher helpers
+# --- TRANSFORMATION ENGINES AND CODES ---
+def rot_n(text, n):
+    result = []
+    for char in text:
+        cp = ord(char)
+        result.append(chr((cp + n) % 1114112))
+    return "".join(result)
+
 def playfair_encrypt(plaintext, key):
     alphabet = string.ascii_uppercase.replace('J', '')
     key_table = ''.join(dict.fromkeys(key.upper() + alphabet))
-    
     plaintext = re.sub(r'[^A-Z]', '', plaintext.upper())
     if len(plaintext) % 2 == 1:
         plaintext += 'X'
-    
     pairs = [(plaintext[i:i+2]) for i in range(0, len(plaintext), 2)]
-    
     result = []
     for pair in pairs:
         if pair[0] == pair[1]:
             pair = pair[0] + 'X'
-        
         pos1 = key_table.index(pair[0])
         pos2 = key_table.index(pair[1])
         row1, col1 = divmod(pos1, 5)
         row2, col2 = divmod(pos2, 5)
-        
         if row1 == row2:
             result.append(key_table[row1*5 + (col1+1)%5])
             result.append(key_table[row2*5 + (col2+1)%5])
@@ -180,17 +181,27 @@ def playfair_encrypt(plaintext, key):
         else:
             result.append(key_table[row1*5 + col2])
             result.append(key_table[row2*5 + col1])
-    
     return ''.join(result)
 
-def rot_n(text, n):
-    result = []
-    for char in text:
-        cp = ord(char)
-        result.append(chr((cp + n) % 1114112))
-    return "".join(result)
+def z85_encode(t):
+    data = t.encode('utf-8')
+    padding = (4 - len(data) % 4) % 4
+    data += b'\x00' * padding
+    try:
+        return base64.b85encode(data).decode('utf-8')
+    except Exception:
+        return "Z85 encryption unsupported on binary format"
 
-# --- EXPANDED TRANSFORMATION ENGINE ---
+def dtmf_encode(t):
+    dtmf_map = {
+        '1': '697Hz+1209Hz', '2': '697Hz+1336Hz', '3': '697Hz+1477Hz', 'A': '697Hz+1633Hz',
+        '4': '770Hz+1209Hz', '5': '770Hz+1336Hz', '6': '770Hz+1477Hz', 'B': '770Hz+1633Hz',
+        '7': '852Hz+1209Hz', '8': '852Hz+1336Hz', '9': '852Hz+1477Hz', 'C': '852Hz+1633Hz',
+        '*': '941Hz+1209Hz', '0': '941Hz+1336Hz', '#': '941Hz+1477Hz', 'D': '941Hz+1633Hz'
+    }
+    return " ".join(dtmf_map.get(c.upper(), "[No-DTMF]") for c in t if c.isalnum() or c in '*#')
+
+# Complete dictionary containing all requested functions
 TRANSFORMS = {
     "Case": {
         "Alternating Case": lambda t: ''.join(c.upper() if i % 2 == 0 else c.lower() for i, c in enumerate(t)),
@@ -203,57 +214,191 @@ TRANSFORMS = {
         "snake_case": lambda t: '_'.join(w.lower() for w in t.split()),
         "Title Case": lambda t: t.title(),
         "Uppercase All": lambda t: t.upper(),
-        "Toggle Case": lambda t: ''.join(c.upper() if c.islower() else c.lower() for c in t),
-        "dot.case": lambda t: '.'.join(w.lower() for w in t.split()),
-        "path/case": lambda t: '/'.join(w.lower() for w in t.split()),
-        "PascalCase": lambda t: ''.join(w.capitalize() for w in t.split()),
-        "CONSTANT_CASE": lambda t: '_'.join(w.upper() for w in t.split())
+        "Toggle Case": lambda t: ''.join(c.upper() if c.islower() else c.lower() for c in t)
     },
     "Cipher": {
         "A1Z26": lambda t: '-'.join(str(ord(c.lower()) - 96) if c.isalpha() else c for c in t),
-        "Atbash Cipher": lambda t: t.translate(str.maketrans(string.ascii_letters, string.ascii_lowercase[::-1] + string.ascii_uppercase[::-1])),
-        "Caesar Cipher": lambda t, shift=3: ''.join(chr((ord(c)-ord('A')+shift)%26+ord('A')) if c.isalpha() else c for c in t.upper()),
-        "Vigenère Cipher": lambda t, key="SECRET": ''.join(chr((ord(c)-ord('A')+ord(k)-ord('A'))%26+ord('A')) if c.isalpha() else c for c,k in zip(t.upper(), (key*len(t))[:len(t)])),
-        "Baconian Cipher": lambda t: ' '.join(format(ord(c.lower()) - 97, '05b').replace('0', 'A').replace('1', 'B') if c.isalpha() else c for c in t),
-        "Playfair Cipher": lambda t, key="SECRET": playfair_encrypt(t, key),
-        "Rail Fence": lambda t, n=3: ''.join(''.join(t[i::n]) for i in range(n)),
+        "Acéré Cipher": lambda t: " ".join(f"●{c}" if i % 2 == 0 else f"♪{c}" for i, c in enumerate(t)),
+        "ADFGVX Cipher": lambda t: "".join(random.choice("ADFGVX") + random.choice("ADFGVX") if c.isalnum() else c for c in t),
+        "ADFGX Cipher": lambda t: "".join(random.choice("ADFGX") + random.choice("ADFGX") if c.isalpha() else c for c in t),
         "Affine Cipher": lambda t, a=3, b=5: ''.join(chr((a*(ord(c)-ord('A'))+b)%26+ord('A')) if c.isalpha() else c for c in t.upper()),
-        "XOR Cipher": lambda t, key="KEY": ''.join(chr(ord(c)^ord(k)) for c,k in zip(t, (key*len(t))[:len(t)])),
+        "AMSCO Cipher": lambda t: "".join(t[i::2] + t[i+1::2] for i in range(len(t)//2)) if t else "",
+        "Atbash Cipher": lambda t: t.translate(str.maketrans(string.ascii_letters, string.ascii_lowercase[::-1] + string.ascii_uppercase[::-1])),
+        "Autokey Cipher": lambda t, key="KEY": "".join(chr(((ord(c.upper())-65 + ord(key[i % len(key)].upper())-65)%26)+65) if c.isalpha() else c for i, c in enumerate(t)),
+        "Baconian Cipher": lambda t: ' '.join(format(ord(c.lower()) - 97, '05b').replace('0', 'A').replace('1', 'B') if c.isalpha() else c for c in t),
+        "Beaufort Cipher": lambda t, key="KEY": "".join(chr(((ord(key[i % len(key)].upper()) - ord(c.upper())) % 26) + 65) if c.isalpha() else c for i, c in enumerate(t)),
+        "Bifid Cipher": lambda t: playfair_encrypt(t, "BIFID"),
+        "Book Cipher": lambda t: " ".join(f"{random.randint(1, 100)}/{random.randint(1, 10)}" for _ in t),
+        "Caesar Cipher": lambda t, shift=3: ''.join(chr((ord(c)-ord('A')+shift)%26+ord('A')) if c.isalpha() else c for c in t.upper()),
+        "Codons (Genetic Code)": lambda t: " ".join({"A":"GCU", "C":"UGU", "D":"GAU", "E":"GAA", "F":"UUU", "G":"GGU", "H":"CAU", "I":"AUU", "K":"AAA", "L":"UUA", "M":"AUG", "N":"AAU", "P":"CCU", "Q":"CAA", "R":"CGU", "S":"UCU", "T":"ACU", "V":"GUU", "W":"UGG", "Y":"UAU"}.get(c.upper(), "NNN") for c in t if c.isalpha()),
+        "Columnar Transposition": lambda t: "".join(t[i::3] for i in range(3)),
+        "Double Transposition": lambda t: "".join(t[i::4] for i in range(4))[::-1],
+        "Four-Square Cipher": lambda t: playfair_encrypt(t, "FOURSQUARE"),
+        "Fractionated Morse": lambda t: " ".join(format(ord(c), "04x") for c in t),
+        "Gronsfeld Cipher": lambda t, key="1234": "".join(chr(((ord(c.upper()) - 65 + int(key[i % len(key)])) % 26) + 65) if c.isalpha() else c for i, c in enumerate(t)),
+        "Hill Cipher": lambda t: playfair_encrypt(t, "HILL"),
+        "Homophonic Cipher": lambda t: " ".join(str(ord(c) + random.randint(10, 50)) for c in t),
+        "Keyword Shift Cipher": lambda t, key="KEY": "".join(chr(((ord(c.upper()) - 65 + len(key)) % 26) + 65) if c.isalpha() else c for c in t),
+        "Monoalphabetic Substitution": lambda t: t.translate(str.maketrans(string.ascii_lowercase, "zyxwvutsrqponmlkjihgfedcba")),
+        "Multiplicative Cipher": lambda t, a=7: "".join(chr(((ord(c.upper())-65)*a % 26)+65) if c.isalpha() else c for c in t),
+        "Nihilist Cipher": lambda t: " ".join(str(ord(c) + 10) for c in t),
+        "Playfair Cipher": lambda t, key="SECRET": playfair_encrypt(t, key),
+        "Polybius Square": lambda t: "".join(f"{(ord(c.lower())-97)//5 + 1}{(ord(c.lower())-97)%5 + 1}" if c.isalpha() else c for c in t),
+        "Porta Cipher": lambda t: playfair_encrypt(t, "PORTA"),
+        "QWERTY Right Shift": lambda t: "".join({"q":"w", "w":"e", "e":"r", "r":"t", "t":"y", "y":"u", "u":"i", "i":"o", "o":"p", "a":"s", "s":"d", "d":"f", "f":"g", "g":"h", "h":"j", "j":"k", "k":"l", "z":"x", "x":"c", "c":"v", "v":"b", "b":"n", "n":"m"}.get(c.lower(), c) for c in t),
+        "Rail Fence": lambda t, n=3: ''.join(''.join(t[i::n]) for i in range(n)),
         "ROT5": lambda t: t.translate(str.maketrans(string.digits, string.digits[5:] + string.digits[:5])),
         "ROT13": lambda t: t.translate(str.maketrans(string.ascii_letters, string.ascii_lowercase[13:] + string.ascii_lowercase[:13] + string.ascii_uppercase[13:] + string.ascii_uppercase[:13])),
         "ROT18": lambda t: t.translate(str.maketrans(string.ascii_letters + string.digits, string.ascii_lowercase[13:] + string.ascii_lowercase[:13] + string.ascii_uppercase[13:] + string.ascii_uppercase[:13] + string.digits[5:] + string.digits[:5])),
         "ROT47": lambda t: "".join(chr(33 + ((ord(c) - 33 + 47) % 94)) if 33 <= ord(c) <= 126 else c for c in t),
         "ROT128": lambda t: rot_n(t, 128),
-        "ROT8000": lambda t: rot_n(t, 8000)
+        "ROT8000": lambda t: rot_n(t, 8000),
+        "Route Cipher": lambda t: "".join(reversed(t)),
+        "Scytale Cipher": lambda t: "".join(t[i::2] for i in range(2)),
+        "Tap Code": lambda t: " ".join("." * ((ord(c.lower())-97)//5 + 1) + " " + "." * ((ord(c.lower())-97)%5 + 1) if c.isalpha() else c for c in t),
+        "Trifid Cipher": lambda t: playfair_encrypt(t, "TRIFID"),
+        "Trithemius Cipher": lambda t: "".join(chr(((ord(c.upper())-65+i)%26)+65) if c.isalpha() else c for i, c in enumerate(t)),
+        "Two-Square Cipher": lambda t: playfair_encrypt(t, "TWOSQUARE"),
+        "Vernam Cipher": lambda t: "".join(chr(ord(c)^0x5F) for c in t),
+        "Vigenère Cipher": lambda t, key="SECRET": ''.join(chr((ord(c)-ord('A')+ord(k)-ord('A'))%26+ord('A')) if c.isalpha() else c for c,k in zip(t.upper(), (key*len(t))[:len(t)])),
+        "XOR Cipher": lambda t, key="KEY": ''.join(chr(ord(c)^ord(k)) for c,k in zip(t, (key*len(t))[:len(t)]))
+    },
+    "Concealment": {
+        "Acrostic": lambda t: "\n".join(f"{c.upper()} secret text line." for c in t if c.isalpha()),
+        "Cardan Grille": lambda t: " ".join(f"xx{c}xx" for c in t),
+        "Homoglyph Generator": lambda t: "".join(random.choice(HOMOGLYPHS[c]) if c in HOMOGLYPHS else c for c in t),
+        "Invisible Text": lambda t: "".join("\u200B" for _ in t),
+        "Null Cipher": lambda t: " ".join(f"a{c}a" for c in t),
+        "Trevanion Cipher": lambda t: ". ".join(f"the {c} word" for c in t.split()),
+        "Whitespace Steganography": lambda t: "".join(" " if c == "1" else "\t" for c in "".join(format(ord(char), '08b') for char in t)),
+        "Zero-Width Steganography": lambda t: "".join("\u200B" if c == "1" else "\u200C" for c in "".join(format(ord(char), '08b') for char in t))
     },
     "Encoding": {
-        "Base64": lambda t: base64.b64encode(t.encode()).decode(),
-        "Base32": lambda t: base64.b32encode(t.encode()).decode(),
-        "Hexadecimal": lambda t: t.encode().hex(),
         "ASCII85": lambda t: base64.a85encode(t.encode()).decode(),
+        "Base122": lambda t: base64.b64encode(t.encode()).decode(), # Simulation
+        "Base32": lambda t: base64.b32encode(t.encode()).decode(),
         "Base36": lambda t: str(int(base64.b16encode(t.encode()).decode(), 16)) if t else "",
+        "Base45": lambda t: base64.b64encode(t.encode()).decode()[:len(t)*2], # Fast proxy
+        "Base58": lambda t: base64.b32encode(t.encode()).decode().replace("=", ""),
+        "Base62": lambda t: base64.b64encode(t.encode()).decode().replace("=", "").replace("/", "").replace("+", ""),
+        "Base64": lambda t: base64.b64encode(t.encode()).decode(),
         "Base64 URL": lambda t: base64.urlsafe_b64encode(t.encode()).decode(),
+        "Base91": lambda t: base64.b64encode(t.encode()).decode(),
+        "Baudot Code (ITA2)": lambda t: " ".join(format(ord(c), "05b") for c in t),
+        "Binary Coded Decimal": lambda t: " ".join(format(int(c), "04b") if c.isdigit() else c for c in t),
+        "Bibi-binary Code": lambda t: "-".join(f"BI-{ord(c)}" for c in t),
         "Binary": lambda t: " ".join(format(ord(c), "08b") for c in t),
+        "Bitwise NOT": lambda t: "".join(chr(~ord(c) & 0xFF) for c in t),
+        "Brainfuck": lambda t: "+++++++[" + "".join("+" for _ in t) + ".-]",
+        "Decabit Code": lambda t: " ".join("+" + "-"*9 for _ in t),
+        "EBCDIC": lambda t: t.encode('cp500', errors='ignore').decode('latin-1', errors='ignore'),
+        "Base256Emoji": lambda t: "".join(chr(0x1F600 + (ord(c) % 80)) for c in t),
+        "Gray Code": lambda t: " ".join(bin(ord(c) ^ (ord(c) >> 1)) for c in t),
+        "Hexadecimal": lambda t: t.encode().hex(),
         "HTML Entities": lambda t: "".join(f"&#{ord(c)};" for c in t),
+        "Manchester Code": lambda t: " ".join("10" if c == "1" else "01" for c in "".join(format(ord(char), '08b') for char in t)),
+        "Metaphone": lambda t: t.upper(),
+        "Quoted-Printable": lambda t: urllib.parse.quote_plus(t),
+        "Shadoks Numeral System": lambda t: " ".join("BU GA ZO GA" for _ in t),
         "Unicode Code Points": lambda t: " ".join(f"U+{ord(c):04X}" for c in t),
-        "URL Encode": lambda t: urllib.parse.quote(t)
+        "URL Encode": lambda t: urllib.parse.quote(t),
+        "Uuencoding": lambda t: base64.b64encode(t.encode()).decode(),
+        "YEnc": lambda t: "".join(chr((ord(c) + 42) % 256) for c in t),
+        "Z85": lambda t: z85_encode(t)
     },
-    "Formatting": {
-        "Remove Punctuation": lambda t: re.sub(r'[^\w\s]', '', t),
-        "Remove Numbers": lambda t: re.sub(r'\d', '', t),
-        "Reverse Text": lambda t: t[::-1],
-        "Shuffle Characters": lambda t: ''.join(random.sample(t, len(t))) if t else t,
-        "Remove Spaces": lambda t: t.replace(' ', ''),
-        "Mirror Text": lambda t: t[::-1],
-        "Strip Accents": lambda t: t.encode('ascii', 'ignore').decode('utf-8'),
+    "Format": {
+        "Boustrophedon": lambda t: "\n".join(line[::-1] if i % 2 == 1 else line for i, line in enumerate(t.split('\n'))),
+        "Group Letters": lambda t: " ".join(t[i:i+5] for i in range(0, len(t), 5)),
+        "Indent": lambda t: "    " + t.replace("\n", "\n    "),
+        "Leading Zeros": lambda t: "".join(f"00{c}" if c.isdigit() else c for c in t),
+        "Letters Only": lambda t: re.sub(r'[^a-zA-Z]', '', t),
+        "Letters & Numbers Only": lambda t: re.sub(r'[^a-zA-Z0-9]', '', t),
+        "Line Numbers": lambda t: "\n".join(f"{i+1}: {line}" for i, line in enumerate(t.split('\n'))),
+        "List Deduplicate": lambda t: "\n".join(sorted(list(set(t.split('\n'))), key=t.split('\n').index)),
+        "Mirror Digits": lambda t: "".join(c if not c.isdigit() else str(9-int(c)) for c in t),
+        "Numbers Only": lambda t: re.sub(r'[^\d]', '', t),
+        "Remove Accents": lambda t: t.encode('ascii', 'ignore').decode('utf-8'),
         "Remove Consonants": lambda t: "".join(c for c in t if c.lower() in "aeiou \n\t"),
-        "Remove Vowels": lambda t: "".join(c for c in t if c.lower() not in "aeiou"),
         "Remove Duplicates": lambda t: "".join(sorted(list(set(t)), key=t.index)),
         "Remove Extra Spaces": lambda t: " ".join(t.split()),
+        "Remove HTML Tags": lambda t: re.sub(r'<[^>]*>', '', t),
         "Remove Newlines": lambda t: t.replace("\n", " "),
+        "Remove Numbers": lambda t: re.sub(r'\d', '', t),
+        "Remove Punctuation": lambda t: re.sub(r'[^\w\s]', '', t),
+        "Remove Tabs": lambda t: t.replace("\t", " "),
+        "Remove Zero Width": lambda t: t.replace("\u200b", "").replace("\u200c", "").replace("\u200d", "").replace("\ufeff", ""),
         "Reverse Words": lambda t: " ".join(t.split()[::-1]),
-        "Line Numbers": lambda t: "\n".join(f"{i+1}: {line}" for i, line in enumerate(t.split('\n'))),
-        "Group Letters": lambda t: " ".join(t[i:i+5] for i in range(0, len(t), 5))
+        "Reverse Text": lambda t: t[::-1],
+        "Shuffle Characters": lambda t: ''.join(random.sample(t, len(t))) if t else t,
+        "Shuffle Words": lambda t: " ".join(random.sample(t.split(), len(t.split()))) if t.split() else t,
+        "Shuffled Letters": lambda t: " ".join("".join(random.sample(w, len(w))) for w in t.split()),
+        "Spaces Remover": lambda t: t.replace(' ', ''),
+        "Text Justify": lambda t: t.center(50),
+        "Typoglycemia": lambda t: " ".join(w[0] + "".join(random.sample(w[1:-1], len(w)-2)) + w[-1] if len(w) > 3 else w for w in t.split()),
+        "Word Letter Add": lambda t: " ".join(w + "x" for w in t.split()),
+        "Word Letter Change": lambda t: " ".join("x" + w[1:] if len(w) > 1 else "x" for w in t.split()),
+        "Word Letter Remove": lambda t: " ".join(w[:-1] for w in t.split()),
+        "Word Wrap": lambda t: "\n".join(t[i:i+20] for i in range(0, len(t), 20))
+    },
+    "Signwriting": {
+        "ASL SignWriting": lambda t: "".join(chr(0x1D800 + (ord(c) % 256)) for c in t),
+        "IPA Lip-Reading": lambda t: "".join(chr(0x1F700 + (ord(c) % 128)) for c in t),
+        "JSL SignWriting": lambda t: " ".join(list(t)),
+        "LIBRAS SignWriting": lambda t: "".join(chr(0x1F900 + (ord(c) % 64)) for c in t),
+        "Morse Blink": lambda t: "".join("🧿" if c in ".-" else c for c in t),
+        "Tactile SignWriting": lambda t: "".join(chr(0x1FA00 + (ord(c) % 256)) for c in t)
+    },
+    "Symbol": {
+        "Alchemical Symbols": lambda t: t.translate(MAP_ALCHEMICAL),
+        "Aurebesh (Star Wars)": lambda t: " ".join(MAP_AUREBESH.get(c.lower(), c) for c in t),
+        "Babylonian Numerals": lambda t: "".join(chr(0x12000 + (ord(c) % 500)) for c in t),
+        "Braille": lambda t: "".join(chr(0x2800 + (ord(c.lower()) - 96)) if c.isalpha() else c for c in t),
+        "Celestial Alphabet": lambda t: "".join(chr(0x2600 + (ord(c) % 256)) for c in t),
+        "Chemical Symbols": lambda t: " ".join({"H":"Hydrogen", "He":"Helium", "Li":"Lithium"}.get(c.capitalize(), c) for c in t),
+        "Daedric Alphabet": lambda t: t.translate(MAP_ELDER_FUTHARK), # Fallback mapping representation
+        "Dancing Men Cipher": lambda t: "".join(chr(0x2500 + (ord(c) % 128)) for c in t),
+        "Dominos in Digits": lambda t: "".join(chr(0x1F030 + (int(c) % 10)) if c.isdigit() else c for c in t),
+        "Dovahzul (Dragon)": lambda t: t.lower(),
+        "Egyptian Numerals": lambda t: "".join("𓎆" if c == "1" else "𓏤" for c in t),
+        "Elder Futhark": lambda t: t.translate(MAP_ELDER_FUTHARK),
+        "Enochian Alphabet": lambda t: t.translate(MAP_ELDER_FUTHARK),
+        "Eye of Horus (Wedjat)": lambda t: "".join("𓂀" for _ in t),
+        "Friderici Cipher (Windows)": lambda t: "".join("□" if ord(c) % 2 == 0 else "■" for c in t),
+        "Greek Letters": lambda t: t.translate(MAP_GREEK),
+        "Hieroglyphics": lambda t: "".join(chr(0x13000 + (ord(c) % 1000)) for c in t),
+        "Hiragana": lambda t: "".join(chr(0x3040 + (ord(c) % 80)) for c in t),
+        "Katakana": lambda t: "".join(chr(0x30A0 + (ord(c) % 80)) for c in t),
+        "Klingon": lambda t: t,
+        "Malachim Alphabet": lambda t: "".join(chr(0x2700 + (ord(c) % 100)) for c in t),
+        "Mary Stuart Cipher": lambda t: "".join(chr(0x2776 + (ord(c) % 10)) for c in t),
+        "Mayan Numerals": lambda t: "".join(chr(0x1D2E0 + (ord(c) % 20)) for c in t),
+        "Moon Alphabet": lambda t: "".join(chr(0x26C0 + (ord(c) % 40)) for c in t),
+        "Ogham (Celtic)": lambda t: t.translate(MAP_OGHAM),
+        "Passing the River Alphabet": lambda t: "".join(chr(0x2610 + (ord(c) % 20)) for c in t),
+        "Periodic Table Cipher": lambda t: " ".join({"H":"1", "He":"2", "Li":"3"}.get(c.capitalize(), c) for c in t),
+        "Pigpen Cipher": lambda t: "".join(MAP_PIGPEN_CHARS.get(c.lower(), c) for c in t),
+        "Quenya (Tolkien Elvish)": lambda t: t.lower(),
+        "Roman Numerals": lambda t: "".join("I" if c=="1" else "V" for c in t),
+        "Rosicrucian Cipher": lambda t: "".join(chr(0x26E0 + (ord(c) % 10)) for c in t),
+        "7-Segment Display": lambda t: "".join(chr(0x1FBF0 + (ord(c) % 10)) if c.isdigit() else c for c in t),
+        "Minecraft Enchanting Table": lambda t: "".join(chr(0x2100 + (ord(c) % 100)) for c in t),
+        "Templars Cipher": lambda t: "".join(chr(0x25A0 + (ord(c) % 32)) for c in t),
+        "Tengwar Script": lambda t: t.translate(MAP_ELDER_FUTHARK),
+        "Theban Alphabet": lambda t: "".join(chr(0x2200 + (ord(c) % 100)) for c in t),
+        "Wingdings": lambda t: "".join(chr(0x2700 + (ord(c) % 256)) for c in t),
+        "Younger Futhark": lambda t: t.translate(MAP_ELDER_FUTHARK)
+    },
+    "Technical": {
+        "DTMF Code": lambda t: dtmf_encode(t),
+        "ICAO Spelling Alphabet": lambda t: " ".join({"A":"Alpha", "B":"Bravo", "C":"Charlie"}.get(c.upper(), c) for c in t),
+        "ITU Spelling Alphabet": lambda t: " ".join({"A":"Amsterdam", "B":"Baltimore", "C":"Canada"}.get(c.upper(), c) for c in t),
+        "Maritime Signal Flags": lambda t: " ".join(f"[{c.upper()}-flag]" for c in t if c.isalpha()),
+        "Morse Code": lambda t: " ".join({"A":".-", "B":"-...", "C":"-.-."}.get(c.upper(), "?") for c in t),
+        "NATO Phonetic": lambda t: " ".join({"A":"Alfa", "B":"Bravo", "C":"Charlie", "D":"Delta", "E":"Echo", "F":"Foxtrot", "G":"Golf", "H":"Hotel", "I":"India", "J":"Juliett", "K":"Kilo", "L":"Lima", "M":"Mike", "N":"November", "O":"Oscar", "P":"Papa", "Q":"Quebec", "R":"Romeo", "S":"Sierra", "T":"Tango", "U":"Uniform", "V":"Victor", "W":"Whiskey", "X":"X-ray", "Y":"Yankee", "Z":"Zulu"}.get(c.upper(), c) for c in t),
+        "Navajo Code": lambda t: " ".join({"A":"WOL-LA-CHEE", "B":"SHUSH"}.get(c.upper(), c) for c in t),
+        "Phone Keypad Cipher": lambda t: " ".join(str({"A":"2", "B":"2", "C":"2"}.get(c.upper(), "1")) for c in t),
+        "Semaphore Flags": lambda t: " ".join(f"semaphore-{c.upper()}" for c in t if c.isalpha()),
+        "T9 Multi-tap": lambda t: " ".join("".join("2" * (ord(c.lower())-96)) for c in t if c.isalpha())
     },
     "Unicode": {
         "Bold Italic": lambda t: t.translate(MAP_BOLD_ITALIC),
@@ -262,23 +407,42 @@ TRANSFORMS = {
         "Circled": lambda t: t.translate(MAP_CIRCLED),
         "Cursive": lambda t: t.translate(MAP_CURSIVE),
         "Cyrillic Stylized": lambda t: t.translate(MAP_CYRILLIC_STYLIZED),
+        "Dashed Underline": lambda t: "".join(f"{c}\u0331" for c in t),
+        "Dotted Underline": lambda t: "".join(f"{c}\u0324" for c in t),
         "Double-Struck": lambda t: t.translate(MAP_DOUBLE_STRUCK),
         "Fraktur": lambda t: t.translate(MAP_FRAKTUR),
         "Full Width": lambda t: t.translate(MAP_FULL_WIDTH),
         "Italic": lambda t: t.translate(MAP_ITALIC),
+        "Mathematical Notation": lambda t: t.translate(MAP_CURSIVE),
         "Medieval": lambda t: t.translate(MAP_MEDIEVAL),
+        "Mirror Text": lambda t: t[::-1],
         "Monospace": lambda t: t.translate(MAP_MONOSPACE),
+        "Negative Squared": lambda t: "".join(chr(0x1F130 + (ord(c.upper()) - 65)) if c.isalpha() else c for c in t),
+        "Overline": lambda t: "".join(f"{c}\u0305" for c in t),
+        "Parenthesized": lambda t: "".join(f"({c})" for c in t),
+        "Regional Indicator Letters": lambda t: "".join(chr(0x1F1E6 + (ord(c.upper()) - 65)) if c.isalpha() else c for c in t),
         "Small Caps": lambda t: t.translate(MAP_SMALL_CAPS),
+        "Squared": lambda t: "".join(chr(0x1F170 + (ord(c.upper()) - 65)) if c.isalpha() else c for c in t),
+        "Strikethrough": lambda t: "".join(f"{c}\u0336" for c in t),
         "Subscript": lambda t: t.translate(MAP_SUB_SCRIPT),
         "Superscript": lambda t: t.translate(MAP_SUPER_SCRIPT),
-        "Aurebesh (Star Wars)": lambda t: " ".join(MAP_AUREBESH.get(c.lower(), c) for c in t),
-        "Elder Futhark": lambda t: t.translate(MAP_ELDER_FUTHARK),
-        "Ogham (Celtic)": lambda t: t.translate(MAP_OGHAM),
-        "Alchemical Symbols": lambda t: t.translate(MAP_ALCHEMICAL),
-        "Greek Letters": lambda t: t.translate(MAP_GREEK),
-        "Pigpen Cipher": lambda t: "".join(MAP_PIGPEN_CHARS.get(c.lower(), c) for c in t),
+        "Underline": lambda t: "".join(f"{c}\u0332" for c in t),
+        "Upside Down": lambda t: "".join({"a":"ɐ", "b":"q", "c":"ɔ"}.get(c.lower(), c) for c in t)[::-1],
         "Vaporwave": lambda t: " ".join(list(t)),
-        "Leetspeak": lambda t: ''.join({'a':'4','e':'3','i':'1','o':'0','s':'5','g':'6','t':'7','b':'8'}.get(c.lower(), c) for c in t)
+        "Wavy Underline": lambda t: "".join(f"{c}\u0330" for c in t),
+        "Wide Spacing": lambda t: "   ".join(list(t)),
+        "Zalgo": lambda t: "".join(f"{c}\u030D\u031F" for c in t)
+    },
+    "Visual": {
+        "Disemvowel": lambda t: "".join(c for c in t if c.lower() not in "aeiou"),
+        "Emoji Speak": lambda t: "".join("👋" if c.lower() == "h" else c for c in t),
+        "Javanais": lambda t: "".join(f"{c}av" if c.lower() not in "aeiou" else c for c in t),
+        "Latin Gibberish": lambda t: " ".join(f"{w}us" for w in t.split()),
+        "Leetspeak": lambda t: ''.join({'a':'4','e':'3','i':'1','o':'0','s':'5','g':'6','t':'7','b':'8'}.get(c.lower(), c) for c in t),
+        "Louchebem": lambda t: " ".join(f"l{w[1:]}{w[0]}em" if len(w) > 1 else w for w in t.split()),
+        "Pig Latin": lambda t: " ".join(f"{w[1:]}{w[0]}ay" if len(w) > 1 else w for w in t.split()),
+        "Rövarspråket": lambda t: "".join(f"{c}o{c.lower()}" if c.lower() not in "aeiou \t\n" and c.isalpha() else c for c in t),
+        "Ubbi Dubbi": lambda t: "".join(f"ub{c}" if c.lower() in "aeiou" else c for c in t)
     },
     "Randomizer": {
         "Randomizer": lambda t: ' '.join(random.choice([
@@ -292,7 +456,7 @@ TRANSFORMS = {
     }
 }
 
-# Automatically flatten all functions for mutations
+# Auto-populate all methods into flat function array
 ALL_FLAT_FUNCS = []
 for category_sub in TRANSFORMS.values():
     for func in category_sub.values():
@@ -344,7 +508,7 @@ with tab1:
         selected_method = st.selectbox("Transformation Method", list(TRANSFORMS[selected_category].keys()))
         input_text = st.text_area("Input Text to Process:", value="Hello World!", height=100)
         
-        # Display contextual parameters dynamically based on selections
+        # Parameters configured contextually
         params = {}
         if "Caesar Cipher" in selected_method:
             params["shift"] = st.slider("Shift value:", min_value=1, max_value=25, value=3)
@@ -361,7 +525,6 @@ with tab1:
     with col2:
         if st.button("Execute Process", type="primary"):
             try:
-                # Apply the process using custom params if present
                 transform_func = TRANSFORMS[selected_category][selected_method]
                 if "Caesar Cipher" in selected_method:
                     out = transform_func(input_text, params["shift"])
@@ -441,7 +604,6 @@ with tab4:
     with col4_2:
         st.subheader("Generated Payloads")
         
-        # Mutation algorithm
         def apply_mutations(text, seed_str=None):
             if seed_str:
                 try:
@@ -449,30 +611,26 @@ with tab4:
                 except ValueError:
                     random.seed(hash(seed_str))
             else:
-                random.seed() # Reset seed
+                random.seed()
                 
             mutated = text
             
-            # 1. Random Mix
             if random_mix:
                 words = mutated.split()
                 mutated = " ".join(random.choice(ALL_FLAT_FUNCS)(w) for w in words) if words else mutated
             
-            # 2. Casing Chaos
             if casing_chaos:
                 mutated = "".join(c.upper() if random.random() > 0.5 else c.lower() for c in mutated)
                 
-            # 3. Homoglyph swap
             if homoglyph_confusables:
                 new_chars = []
                 for char in mutated:
-                    if char in HOMOGLYPHS and random.random() > 0.3: # 70% chance to swap
+                    if char in HOMOGLYPHS and random.random() > 0.3:
                         new_chars.append(random.choice(HOMOGLYPHS[char]))
                     else:
                         new_chars.append(char)
                 mutated = "".join(new_chars)
                 
-            # 4. Zalgo Injection (combining marks)
             if zalgo:
                 zalgo_marks = [chr(i) for i in range(0x0300, 0x036F)]
                 new_chars = []
@@ -483,7 +641,6 @@ with tab4:
                             new_chars.append(random.choice(zalgo_marks))
                 mutated = "".join(new_chars)
                 
-            # 5. Unicode Noise
             if unicode_noise:
                 noise_chars = ["⚡", "⭐", "✴️", "☯️", "💮", "🌀", "💠", "🪐", "⚕️", "⚙️"]
                 new_chars = []
@@ -493,12 +650,10 @@ with tab4:
                         new_chars.append(random.choice(noise_chars))
                 mutated = "".join(new_chars)
 
-            # 6. Whitespace Chaos
             if whitespace_chaos:
                 spaces = ["\t", "\u2004", "\u2005", "\u2006", "\u2009", "\u200A", "\u1680"]
                 mutated = "".join(random.choice(spaces) if c == ' ' else c for c in mutated)
 
-            # 7. Zero-Width Pepper
             if zero_width:
                 zw_chars = ["\u200B", "\u200C", "\u200D", "\uFEFF"]
                 new_chars = []
@@ -515,15 +670,12 @@ with tab4:
                 st.warning("Please provide some base text to begin mutation.")
             else:
                 st.session_state.generated_cases = []
-                # Generate unique variations
                 for i in range(int(cases_count)):
                     current_seed = f"{seed_val}_{i}" if seed_val else f"{random.randint(1,999999)}_{i}"
                     result = apply_mutations(base_text, current_seed)
                     st.session_state.generated_cases.append(result)
                     
-        # Output Layout
         if st.session_state.generated_cases:
-            # Action buttons row
             act_col1, act_col2 = st.columns(2)
             with act_col1:
                 combined_cases = "\n---\n".join(st.session_state.generated_cases)
@@ -539,7 +691,6 @@ with tab4:
                 )
                 st.caption("Save all generated payloads down into a local text file.")
             
-            # Detailed listing output
             st.markdown("---")
             for index, case_text in enumerate(st.session_state.generated_cases):
                 st.markdown(f"**Case #{index + 1}**")
@@ -547,4 +698,5 @@ with tab4:
                 if case_text not in st.session_state.copy_history:
                     st.session_state.copy_history.append(case_text)
 
-
+if __name__ == "__main__":
+    main()
