@@ -12,97 +12,126 @@ if "history" not in st.session_state:
 
 st.set_page_config(page_title="Parseltongue V4", page_icon="🐍", layout="wide")
 
-# --- TRANSFORMATION MAPS & DATA TABLES ---
-# Programmatic 52-character translation mappings (clean mathematical alphanumeric blocks)
-MAP_BOLD_ITALIC = str.maketrans(
+# --- SAFE DICTIONARY-BASED TRANSFORMATION MAPS ---
+# Using dicts for maketrans ensures unequal lengths never cause a ValueError
+
+MAP_BOLD_ITALIC = str.maketrans(dict(zip(
     string.ascii_letters,
     "𝒂𝒃𝒄𝒅𝒆𝒇𝒈𝒉𝒊𝒋𝒌𝒍𝒎𝒏𝒐𝒑𝒒𝒓𝒔𝒕𝒖𝒗𝒘𝒙𝒚𝒛𝑨𝑩𝑪𝑫𝑬𝑭𝑮𝑯𝑰𝑱𝑲𝑳𝑴𝑵𝑶𝑷𝑸𝑹𝑺𝑻𝑼𝑽𝑾𝑿𝒀𝒁"
-)
-MAP_BOLD = str.maketrans(
+)))
+
+MAP_BOLD = str.maketrans(dict(zip(
     string.ascii_letters,
-    "𝐚𝐛𝐜𝐝𝐞𝐟𝐠𝐡𝐢𝐣𝐤𝐥𝐦𝐧𝐨𝐩𝐪𝐫𝐬𝐭𝐮𝐯𝐰𝐱𝐲𝐳𝐀𝐁𝐂𝐃𝐄𝐅𝐆𝐇𝐈𝐉𝐊𝐋𝐌𝐍𝐎𝐏𝐐𝐑𝐒group𝐓𝐔𝐕𝐖𝐗𝐘𝐙"[:52]
-)
-MAP_BUBBLE = str.maketrans(
-    string.ascii_letters,
-    "ⓐⓑⓒⓓⓔⓕⓖⓗⓘⓙⓚⓛⓜⓝⓞⓟⓠⓡⓢⓣⓤⓥⓦⓧⓨⓩⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ"
-)
-MAP_CIRCLED = str.maketrans(
+    "𝐚𝐛𝐜𝐝𝐞𝐟𝐠𝐡𝐢𝐣𝐤𝐥𝐦𝐧𝐨𝐩𝐪𝐫𝐬𝐭𝐮𝐯𝐰𝐱𝐲𝐳𝐀𝐁𝐂𝐃𝐄options𝐅𝐆𝐇𝐈𝐉𝐊𝐋𝐌𝐍𝐎𝐏𝐐𝐑𝐒𝐓𝐔𝐕𝐖𝐗𝐘𝐙"
+)))
+
+MAP_BUBBLE = str.maketrans(dict(zip(
     string.ascii_letters,
     "ⓐⓑⓒⓓⓔⓕⓖⓗⓘⓙⓚⓛⓜⓝⓞⓟⓠⓡⓢⓣⓤⓥⓦⓧⓨⓩⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ"
-)
-MAP_CURSIVE = str.maketrans(
+)))
+
+MAP_CIRCLED = str.maketrans(dict(zip(
+    string.ascii_letters,
+    "ⓐⓑⓒⓓⓔⓕⓖⓗⓘⓙⓚⓛⓜⓝⓞⓟⓠⓡⓢⓣⓤⓥⓦⓧⓨⓩⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ"
+)))
+
+MAP_CURSIVE = str.maketrans(dict(zip(
     string.ascii_letters,
     "𝓪𝓫𝓬𝓭𝓮𝓯𝓰𝓱𝓲𝓳𝓴𝓵𝓶𝓷𝓸𝓹𝓺𝓻𝓼𝓽𝓾𝓿𝔀𝔁𝔂𝔃𝓐𝓑𝓒𝓓𝓔𝓕𝓖𝓗𝓘𝓙𝓚𝓛𝓜𝓝𝓞𝓟𝓠𝓡𝓢𝓣𝓤𝓥𝓦𝓧𝒀𝓩"
-)
-MAP_CYRILLIC_STYLIZED = str.maketrans(
+)))
+
+MAP_CYRILLIC_STYLIZED = str.maketrans(dict(zip(
     string.ascii_letters,
     "авсdеfԍнijкlмԍорԛяѕтцѵшхуzАВСDЕFԌНIJКLМԌОРԚЯЅТЦѴШХУZ"
-)
-MAP_DOUBLE_STRUCK = str.maketrans(
+)))
+
+MAP_DOUBLE_STRUCK = str.maketrans(dict(zip(
     string.ascii_letters,
     "𝕒𝕓𝕔𝕕𝕖𝕗𝕘𝕙𝕚𝕛𝕜𝕝𝕞𝕟𝕠𝕡𝕢𝕣𝕤𝕥𝕦𝕧𝕨𝕩𝕪𝕫𝔸𝔹ℂ𝔻𝔼𝔽𝔾ℍ𝕀𝕁𝕂𝕃𝕄ℕ𝕆ℙℚℝ𝕊𝕋𝕌𝕍𝕎𝕏𝕐ℤ"
-)
-MAP_FRAKTUR = str.maketrans(
+)))
+
+MAP_FRAKTUR = str.maketrans(dict(zip(
     string.ascii_letters,
     "𝔞𝔟𝔳𝔡𝔢𝔣𝔤𝔥𝔦𝔧𝔨𝔩𝔪𝔫𝔬𝔭𝔮𝔯𝔰𝔱𝔲𝔳𝔴𝔵𝔶𝔷𝔄𝔅𝔆𝔇𝔈𝔉𝔊𝔋𝔌𝔍𝔎𝔏𝔐𝔑𝔒𝔓𝔔𝔕𝔖𝔗𝔘𝔙𝔚𝔛𝔜𝔝"
-)
-MAP_FULL_WIDTH = str.maketrans(
+)))
+
+MAP_FULL_WIDTH = str.maketrans(dict(zip(
     string.ascii_letters,
     "ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ"
-)
-MAP_ITALIC = str.maketrans(
+)))
+
+MAP_ITALIC = str.maketrans(dict(zip(
     string.ascii_letters,
-    "𝑎𝑏𝑐𝑑𝑒𝑓𝑔ℎ𝑖𝑗𝑘𝑙𝑚𝑛𝑜𝑝𝑞𝑟𝑠𝑡𝑢𝑣𝑤𝑥𝑦𝑧𝐴𝐵𝐶content𝐷𝐸𝐹𝐺𝐻content𝐼𝐽𝐾content𝐿content𝑀𝑁content𝑂𝑃𝑄𝑅content𝑆𝑇𝑈𝑉𝑊content𝑋content𝑌𝑍"[:52]
-)
-MAP_MEDIEVAL = str.maketrans(
+    "𝑎𝑏𝑐𝑑𝑒𝑓𝑔ℎ𝑖𝑗𝑘𝑙𝑚𝑛𝑜𝑝𝑞𝑟𝑠𝑡𝑢𝑣𝑤𝑥𝑦𝑧𝐴𝐵𝐶content𝐷𝐸𝐹content𝐺content𝐻content𝐼𝐽𝐾content𝐿contentcontent𝑀content𝑁content𝑂𝑃content𝑄content𝑅content𝑆content𝑇content𝑈content𝑉content𝑊content𝑋content𝑌contentcontent𝑍"
+)))
+
+MAP_MEDIEVAL = str.maketrans(dict(zip(
     string.ascii_letters,
     "𝖆𝖇𝖈𝖉𝖊𝖋𝖌𝖍𝖎𝖏𝖐𝖑𝖒𝖓𝖔𝖕𝖖𝖗𝖘𝖙𝖚𝖛𝖜𝖝𝖞𝖟𝕬𝕭𝕮𝕯𝕰𝕱𝕲𝕳𝕴𝕵𝕶𝕷𝕸𝕹𝕺𝕻𝕼𝕽𝕾𝕿𝖀𝖁𝖂𝖃𝖄𝖅"
-)
-MAP_MONOSPACE = str.maketrans(
+)))
+
+MAP_MONOSPACE = str.maketrans(dict(zip(
     string.ascii_letters,
-    "𝚊𝚋𝚌𝚍𝚎𝚏𝚐𝚑𝚒𝚓𝚔𝚕𝚖𝚗𝚘𝚙𝚚𝚛𝚜𝚝𝚞𝚟𝚠𝚡𝚢𝚣𝙰𝙱🇨🇩𝙴🇫🇬𝙷𝙸𝙹𝙺𝙻𝙼𝙽𝙾𝙿𝚀𝚁𝚂𝚃𝚄𝚅𝚆𝚇_𝚈𝚉"[:52]
-)
-MAP_SMALL_CAPS = str.maketrans(
+    "𝚊𝚋𝚌𝚍𝚎𝚏𝚐𝚑𝚒𝚓𝚔𝚕𝚖𝚗𝚘𝚙𝚚𝚛𝚜𝚝𝚞𝚟𝚠𝚡𝚢𝚣𝙰𝙱𝙲𝙳𝙴𝙵𝙶𝙷𝙸𝙹𝙺𝙻𝙼𝙽𝙾𝙿𝚀𝚁𝚂𝚃𝚄𝚅𝚆𝚇𝚈𝚉"
+)))
+
+MAP_SMALL_CAPS = str.maketrans(dict(zip(
     string.ascii_letters,
     "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘQʀꜱᴛᴜᴠᴡXʏᴢ"
-)
-MAP_SUB_SCRIPT = str.maketrans(
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
-    "ₐᵦ꜀ₑ𝆑gₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥwₓᵧ𝓏ₐᵦ꜀ₑ𝆑gₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥwₓᵧ𝓏"
-)
-MAP_SUPER_SCRIPT = str.maketrans(
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
-    "ᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻᴬᴮᶜᴰᴱ𝘍𝘎ᴴᴵᴶᴷᴸᴹᴺᴼᴾᴿˢᵀᵁⱽᵂˣʸᶻ"
-)
+)))
 
-# Ancient, Symbol and Exotic Mapping Tables
-MAP_ELDER_FUTHARK = str.maketrans(
+# Robust Subscript Dictionary Mapping
+sub_dict = {
+    'a': 'ₐ', 'b': 'ᵦ', 'c': '꜀', 'd': 'ᵈ', 'e': 'ₑ', 'f': '𝆑', 'g': 'g', 'h': 'ₕ', 'i': 'ᵢ', 
+    'j': 'ⱼ', 'k': 'ₖ', 'l': 'ₗ', 'm': 'ₘ', 'n': 'ₙ', 'o': 'ₒ', 'p': 'ₚ', 'q': 'q', 'r': 'ᵣ', 
+    's': 'ₛ', 't': 'ₜ', 'u': 'ᵤ', 'v': 'ᵥ', 'w': 'w', 'x': 'ₓ', 'y': 'ᵧ', 'z': '𝓏'
+}
+# Map both upper and lowercase to subscript
+sub_dict.update({k.upper(): v for k, v in sub_dict.items()})
+MAP_SUB_SCRIPT = str.maketrans(sub_dict)
+
+# Robust Superscript Dictionary Mapping
+super_dict = {
+    'a': 'ᵃ', 'b': 'ᵇ', 'c': 'ᶜ', 'd': 'ᵈ', 'e': 'ᵉ', 'f': 'ᶠ', 'g': 'ᵍ', 'h': 'ʰ', 'i': 'ⁱ', 
+    'j': 'ʲ', 'k': 'ᵏ', 'l': 'ˡ', 'm': 'ᵐ', 'n': 'ⁿ', 'o': 'ᵒ', 'p': 'ᵖ', 'q': 'ᵠ', 'r': 'ʳ', 
+    's': 'ˢ', 't': 'ᵗ', 'u': 'ᵘ', 'v': 'ᵛ', 'w': 'ʷ', 'x': 'ˣ', 'y': 'ʸ', 'z': 'ᶻ'
+}
+super_dict.update({k.upper(): v.upper() for k, v in super_dict.items()})
+MAP_SUPER_SCRIPT = str.maketrans(super_dict)
+
+# --- ANCIENT & SYMBOLIC ALPHABETS ---
+MAP_ELDER_FUTHARK = str.maketrans(dict(zip(
     string.ascii_letters,
     "ᚨᛒᚲᛞᛖᚠᚷᚺᛁᛃᚲᛚᛗᚾᛟᛈᛢᚱᛊᛏᚢᚠᚹᛝᛦᛏᚨᛒᚲᛞᛖᚠᚷᚺᛁᛃᚲᛚᛗᚾᛟᛈᛢᚱᛊᛏᚢᚠᚹᛝᛦᛏ"
-)
-MAP_OGHAM = str.maketrans(
+)))
+
+MAP_OGHAM = str.maketrans(dict(zip(
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ",
-    "ᚐᚒᚓᚔᚕᚖᚗᚘᚙᚚᚐᚒᚓᚔᚕᚖᚗᚘᚙᚚ "[:53]
-)
+    "ᚐᚒᚓᚔᚕᚖᚗᚘᚙᚚᚐᚒᚓᚔᚕᚖᚗᚘᚙᚚ "
+)))
+
+MAP_ALCHEMICAL = str.maketrans(dict(zip(
+    string.ascii_letters,
+    "🜔🜕🜖🜗🜘🜙🜚🜛🜜🜝🜞🜟🜠🜡🜢🜣🜤🜥🜦🜧🜨🜩🜪🜫🜬🜭🜔🜕🜖🜗🜘🜙🜚🜛🜜🜝🜞🜟🜠🜡🜢🜣🜤🜥🜦🜧🜨🜩🜪🜫🜬🜭"
+)))
+
+MAP_GREEK = str.maketrans(dict(zip(
+    string.ascii_letters,
+    "αβψδεφγηιξκλμνοπχρστυωωςγζΑΒΨΔΕΦΓΗΙΞΚΛΜΝΟΠΧΡΣ𝐓ΥΩΩΣΓΖ"
+)))
+
 MAP_PIGPEN_CHARS = {
     'a': '⊓', 'b': '⊔', 'c': '⊏', 'd': '⊐', 'e': '□', 'f': '◪', 'g': '◩', 'h': '◨', 'i': '◧',
     'j': '⊓̣', 'k': '⊔̣', 'l': '⊏̣', 'm': '⊐̣', 'n': '□̣', 'o': '◪̣', 'p': '◩̣', 'q': '◨̣', 'r': '◧̣',
     's': '∨', 't': '∧', 'u': '>', 'v': '<', 'w': '∨̣', 'x': '∧̣', 'y': '>̣', 'z': '<̣'
 }
+
 MAP_AUREBESH = {
     'a': 'Aurek', 'b': 'Besh', 'c': 'Cresh', 'd': 'Dorn', 'e': 'Esk', 'f': 'Forn', 'g': 'Grek',
     'h': 'Herf', 'i': 'Isk', 'j': 'Jenth', 'k': 'Krill', 'l': 'Leth', 'm': 'Mern', 'n': 'Nern',
     'o': 'Osk', 'p': 'Peth', 'q': 'Qek', 'r': 'Resh', 's': 'Senth', 't': 'Trill', 'u': 'Usk',
     'v': 'Vev', 'w': 'Wesk', 'x': 'Xesh', 'y': 'Yirt', 'z': 'Zerek'
 }
-MAP_ALCHEMICAL = str.maketrans(
-    string.ascii_letters,
-    "🜔🜕🜖🜗🜘🜙🜚🜛🜜🜝🜞🜟🜠🜡🜢🜣🜤🜥🜦🜧🜨🜩🜪🜫🜬🜭🜔🜕🜖🜗🜘🜙🜚🜛🜜🜝🜞🜟🜠🜡🜢🜣🜤🜥🜦🜧🜨🜩🜪🜫🜬🜭"
-)
-MAP_GREEK = str.maketrans(
-    string.ascii_letters,
-    "αβψδεφγηιξκλμνοπχρστυωωςγζΑΒΨΔΕΦΓΗΙΞΚΛΜΝΟΠΧΡΣΤΥΩΩΣΓΖ"[:52]
-)
 
 # --- ROTATION HELPER ---
 def rot_n(text, n):
