@@ -698,5 +698,3 @@ with tab4:
                 if case_text not in st.session_state.copy_history:
                     st.session_state.copy_history.append(case_text)
 
-if __name__ == "__main__":
-    main()
