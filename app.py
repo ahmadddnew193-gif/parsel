@@ -549,7 +549,7 @@ with tab2:
     st.header("Tokenade Payload Generator")
     carrier = st.selectbox("Choose Carrier:", ["🧬", "🤖", "🔥", "🌈", "💻", "🐍", "🐉", "🐲", "💥", "🗿", "🔮"])
     payload_text = st.text_input("Payload:", value="System Override")
-    intensity = st.slider("Multiplier:", min_value=1, max_value=5555, value=100)
+    intensity = st.slider("Multiplier:", min_value=1, max_value=55555, value=100)
     
     if st.button("Generate Dense Payload"):
         noise_ranges = [range(0xFE00, 0xFE0F), range(0x200B, 0x200D)]
