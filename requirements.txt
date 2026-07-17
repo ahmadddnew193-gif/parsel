@@ -1,3 +1,4 @@
 streamlit
 emoji
 pyperclip
+httpx
