@@ -492,12 +492,13 @@ with st.sidebar:
         st.code("<|end_of_text|>\n<|eot_id|>\n[DONE]\n\\0", language="text")
 
 # --- MAIN NAVIGATION TABS ---
-tab1, tab2, tab3, tab4,tab5 = st.tabs([
+tab1, tab2, tab3, tab4,tab5,tab6 = st.tabs([
     "Transformers", 
     "Tokenade Generator", 
     "PromptCraft (AI Mutation)",
     "Mutation Lab",
-    "Prompt Extraction"
+    "Prompt Extraction",
+    "jailbreak prompts"
 ])
 
 # --- TAB 1: TRANSFORMERS ---
@@ -941,3 +942,13 @@ with tab4:
                 if st.button("Decode Base64"):
                     try: st.code(base64.b64decode(decoder_input.strip()).decode('utf-8', errors='ignore'), language="text")
                     except: st.error("Failed")
+with tab6:
+    a
+    file_path = "myfile.txt"
+    with open(file_path, "rb") as file:
+        st.download_button(
+            label="Download text file",
+            data=file,
+            file_name="myfile.txt",
+            mime="text/plain"
+        )
