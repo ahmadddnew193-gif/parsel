@@ -948,6 +948,6 @@ with tab6:
         st.download_button(
             label="Download text file",
             data=file,
-            file_name="myfile.txt",
+            file_name="jailbreak_prompt.txt",
             mime="text/plain"
         )
