@@ -943,8 +943,7 @@ with tab4:
                     try: st.code(base64.b64decode(decoder_input.strip()).decode('utf-8', errors='ignore'), language="text")
                     except: st.error("Failed")
 with tab6:
-    a
-    file_path = "myfile.txt"
+    file_path = "prompt.txt"
     with open(file_path, "rb") as file:
         st.download_button(
             label="Download text file",
